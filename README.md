@@ -1,0 +1,1 @@
+# app_privacy_manifest_fixer
