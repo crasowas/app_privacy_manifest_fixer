@@ -6,7 +6,7 @@
 
 require 'xcodeproj'
 
-RUN_SCRIPT_PHASE_NAME = 'Privacy Manifest Fixer'
+RUN_SCRIPT_PHASE_NAME = 'Fix Privacy Manifest'
 
 if ARGV.length < 2
   puts "Usage: ruby xcode_helper.rb <project_root_path> <script_content>"
