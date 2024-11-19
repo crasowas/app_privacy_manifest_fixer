@@ -9,12 +9,13 @@ require 'xcodeproj'
 RUN_SCRIPT_PHASE_NAME = 'Fix Privacy Manifest'
 
 if ARGV.length < 2
-  puts "Usage: ruby xcode_helper.rb <project_path> <script_content>"
+  puts "Usage: ruby xcode_helper.rb <project_path> <script_content> [install_builds_only (true|false)]"
   exit 1
 end
 
 project_root_path = ARGV[0]
 run_script_content = ARGV[1]
+install_builds_only = ARGV[2] == 'true'
 
 # Find the first .xcodeproj file in the project root directory
 project_path = Dir.glob(File.join(project_root_path, "*.xcodeproj")).first
@@ -55,7 +56,9 @@ puts "Adding Run Script..."
 new_phase = target.new_shell_script_build_phase(RUN_SCRIPT_PHASE_NAME)
 new_phase.shell_script = run_script_content
 # Disable showing environment variables in the build log
-new_phase.show_env_vars_in_log = "0"
+new_phase.show_env_vars_in_log = '0'
+# Run only for deployment post-processing if install_builds_only is true
+new_phase.run_only_for_deployment_postprocessing = install_builds_only ? '1' : '0'
 
 # Save the project file
 begin

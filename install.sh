@@ -16,8 +16,17 @@ project_path="$1"
 
 shift
 
-# Capture any additional options after <project_path>, to be passed to `fixer.sh`
-options="$*"
+options=()
+install_builds_only=false
+
+# Check if the `--install-builds-only` option is provided and separate it from other options
+for arg in "$@"; do
+  if [ "$arg" == "--install-builds-only" ]; then
+    install_builds_only=true
+  else
+    options+=("$arg")
+  fi
+done
 
 # Verify Ruby installation
 if ! command -v ruby &>/dev/null; then
@@ -48,7 +57,7 @@ if [[ "$fixer_path" == "$project_path"* ]]; then
     run_script_content="\${PROJECT_DIR}${relative_path}"
 fi
 
-run_script_content="$run_script_content/fixer.sh $options"
+run_script_content="$run_script_content/fixer.sh ${options[@]}"
 
 # Execute the Ruby helper script
-ruby "$fixer_path/Helper/xcode_helper.rb" "$project_path" "$run_script_content"
+ruby "$fixer_path/Helper/xcode_helper.rb" "$project_path" "$run_script_content" "$install_builds_only"

@@ -36,6 +36,12 @@ To forcefully overwrite the existing privacy manifest, use the `-f` option (not 
 sh install.sh <project_path> -f
 ```
 
+We recommend using the `--install-builds-only` option, which ensures that the `Fix Privacy Manifest` step is executed only during install builds (e.g., Archive operations), thus speeding up development builds.
+
+```shell
+sh install.sh <project_path> --install-builds-only
+```
+
 ## Usage
 
 Once installed, the tool runs automatically every time the project is built.
