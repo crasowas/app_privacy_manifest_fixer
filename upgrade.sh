@@ -34,7 +34,7 @@ if [ -z "$latest_version" ] || [ -z "$download_url" ]  || [ -z "$published_time"
 fi
 
 # Convert UTC time to local time
-published_time=$(date -d "$published_time" "+%Y-%m-%d %H:%M:%S %z")
+published_time=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%SZ" "$published_time" +"%s" | xargs -I{} date -j -r {} +"%Y-%m-%d %H:%M:%S %z")
 
 # Read the current version from the VERSION file
 if [ ! -f "$fixer_dir/VERSION" ]; then
