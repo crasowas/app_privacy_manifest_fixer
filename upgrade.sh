@@ -28,6 +28,8 @@ published_time=$(echo "$release_info" | grep -o '"published_at": "[^"]*' | sed '
 # Ensure the latest version, download URL, and published time are successfully retrieved
 if [ -z "$latest_version" ] || [ -z "$download_url" ]  || [ -z "$published_time" ]; then
     echo "Unable to fetch the latest release information."
+    echo "Request URL: $LATEST_RELEASE_URL"
+    echo "Response Data: $release_info"
     exit 1
 fi
 
