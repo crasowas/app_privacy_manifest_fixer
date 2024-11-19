@@ -9,7 +9,7 @@ require 'xcodeproj'
 RUN_SCRIPT_PHASE_NAME = 'Fix Privacy Manifest'
 
 if ARGV.length < 2
-  puts "Usage: ruby xcode_helper.rb <project_root_path> <script_content>"
+  puts "Usage: ruby xcode_helper.rb <project_path> <script_content>"
   exit 1
 end
 
@@ -21,7 +21,7 @@ project_path = Dir.glob(File.join(project_root_path, "*.xcodeproj")).first
 
 # Validate the project path
 unless project_path
-  puts "❌ Error: No .xcodeproj file found in the specified directory."
+  puts "Error: No .xcodeproj file found in the specified directory."
   exit 1
 end
 
@@ -29,7 +29,7 @@ end
 begin
   project = Xcodeproj::Project.open(project_path)
 rescue StandardError => e
-  puts "❌ Error: Unable to open the project file - #{e.message}"
+  puts "Error: Unable to open the project file - #{e.message}"
   exit 1
 end
 
@@ -37,7 +37,7 @@ end
 target = project.targets.first
 
 if target.nil?
-  puts "❌ Error: No targets found in the project."
+  puts "Error: No targets found in the project."
   exit 1
 end
 
@@ -54,12 +54,14 @@ end
 puts "Adding Run Script..."
 new_phase = target.new_shell_script_build_phase(RUN_SCRIPT_PHASE_NAME)
 new_phase.shell_script = run_script_content
+# Disable showing environment variables in the build log
+new_phase.show_env_vars_in_log = "0"
 
 # Save the project file
 begin
   project.save
-  puts "✅ Run Script '#{RUN_SCRIPT_PHASE_NAME}' added successfully!"
+  puts "Run Script '#{RUN_SCRIPT_PHASE_NAME}' added successfully!"
 rescue StandardError => e
-  puts "❌ Error: Unable to save the project file - #{e.message}"
+  puts "Error: Unable to save the project file - #{e.message}"
   exit 1
 end
