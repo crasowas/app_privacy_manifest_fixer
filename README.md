@@ -2,73 +2,99 @@
 
 This shell-based tool is built to analyze and update privacy manifests in iOS apps, ensuring compliance with App Store requirements.
 
-**Privacy manifests should be managed by third-party SDK developers.** Whenever possible, prefer upgrading to the latest SDK versions. Use this tool only in the following cases:
-
-* The SDK is deprecated and no longer maintained. 
-* The latest SDK version is incompatible with your iOS project. 
-* The SDK does not provide a privacy manifest.
+> **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.  
+> Use this tool only in the following cases:
+> 1. The SDK has been deprecated and is no longer maintained.
+> 2. The latest SDK version is incompatible with your iOS project.
+> 3. The SDK does not provide a privacy manifest.
 
 ## Features
 
-* Automatically integrates into your iOS project.
-* Analyzes API usage and automatically updates the privacy manifest during the build process.
-* Customizable privacy manifest templates for your app, frameworks, or even a specific framework.
-* Provides an upgrade script for the tool.
+- **Seamless Integration**: Easily integrates or uninstalls from your iOS project.
+- **Automated Analysis**: Analyzes API usage and updates privacy manifests during the build process.
+- **Custom Templates**: Supports customizable privacy manifest templates for apps, generic frameworks, and specific frameworks.
+- **Easy Upgrades**: Includes a script to easily upgrade the tool to the latest version.
 
-## Installation
+## Installation Guide
 
 ### Download the Latest Version
 
-1. Download the latest release from the [GitHub repository](https://github.com/crasowas/app_privacy_manifest_fixer/releases).
-2. For better portability, we recommend extracting the downloaded archive and placing the folder in your iOS project directory.
+1. Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest).
+2. Extract the downloaded archive and place the folder in your iOS project directory for better portability.
 
-### Add the Tool to Your Project
+### Install the Tool
+
+Run the following command to integrate the tool into your project:
 
 ```shell
 sh install.sh <project_path>
 ```
 
-This will automatically add a `Fix Privacy Manifest` step to your project's build phases.
+#### Command Line Options
 
-To forcefully overwrite the existing privacy manifest, use the `-f` option (not recommended). By default, the privacy manifest will not be updated if it already exists.
+- **Force overwrite existing privacy manifests** (not recommended): Use the `-f` option to overwrite existing privacy manifests.
+
+  ```shell
+  sh install.sh <project_path> -f
+  ```
+
+- **Run only during install builds** (recommended): Use the `--install-builds-only` option to ensure the tool runs exclusively during install builds (e.g., Archive operations), improving development build performance.
+
+  ```shell
+  sh install.sh <project_path> --install-builds-only
+  ```
+
+### Uninstall the Tool
+
+To remove the tool, run the following command:
 
 ```shell
-sh install.sh <project_path> -f
-```
-
-We recommend using the `--install-builds-only` option, which ensures that the `Fix Privacy Manifest` step is executed only during install builds (e.g., Archive operations), thus speeding up development builds.
-
-```shell
-sh install.sh <project_path> --install-builds-only
+sh uninstall.sh <project_path>
 ```
 
 ## Usage
 
-Once installed, the tool runs automatically every time the project is built.
+Once installed, the tool runs automatically during each project build.
 
-Update to the latest version by running:
+If installed with the `--install-builds-only` option, the tool runs only during project install builds.
+
+### Upgrade the Tool
+
+To update to the latest version, execute:
 
 ```shell
 sh upgrade.sh
 ```
 
-## Templates
+## Privacy Manifest Templates
 
-The privacy manifest templates are stored in the [Templates](https://github.com/crasowas/app_privacy_manifest_fixer/tree/main/Templates) directory. Custom templates should be placed in the `UserTemplates` subdirectory, which has a higher priority.
+Privacy manifest templates are stored in the [Templates](https://github.com/crasowas/app_privacy_manifest_fixer/tree/main/Templates) directory. Custom templates can be added to the `UserTemplates` subdirectory, which has a higher priority during processing.
 
-Privacy manifest templates are divided into three types:
+### Template Types
 
-* **AppTemplate.xcprivacy:** The privacy manifest template for the app.
-* **FrameworkTemplate.xcprivacy:** A general privacy manifest template for frameworks.
-* **FrameworkName.xcprivacy:** A specific privacy manifest template for a framework, available in the `UserTemplates` directory only.
+Templates are categorized as follows:
 
-You can create custom templates in the `UserTemplates` directory as follows:
+- **AppTemplate.xcprivacy**: A privacy manifest template for the app.
+- **FrameworkTemplate.xcprivacy**: A generic privacy manifest template for frameworks.
+- **FrameworkName.xcprivacy**: A privacy manifest template for a specific framework, available only in the `UserTemplates` directory.
 
-* `Templates/UserTemplates/AppTemplate.xcprivacy`
-* `Templates/UserTemplates/FrameworkTemplate.xcprivacy`
-* `Templates/UserTemplates/FrameworkName.xcprivacy`
+### Create Custom Templates
 
-Among these, `FrameworkTemplate.xcprivacy` will be modified based on API usage analysis results to fix the privacy manifest.
+To create custom templates, place them in the `UserTemplates` directory with the following structure:
 
-**Note:** Name each template using the format `FrameworkName.xcprivacy`, where `FrameworkName` is the name of the specific framework. For example, the template for the `Flutter` framework should be named `Flutter.xcprivacy`. 
-The SDK name may not always match the Framework name. If unsure, check the Application Bundle after building to identify the correct Framework name associated with the SDK.
+- `Templates/UserTemplates/AppTemplate.xcprivacy`
+- `Templates/UserTemplates/FrameworkTemplate.xcprivacy`
+- `Templates/UserTemplates/FrameworkName.xcprivacy`
+
+Among these, only `FrameworkTemplate.xcprivacy` will be modified based on API usage analysis results to produce a new privacy manifest, while other templates will remain unchanged.
+
+**Important Notes:**
+
+- Specific framework templates must follow the naming convention `FrameworkName.xcprivacy`, where `FrameworkName` matches the framework's name. For example, the `Flutter` framework template should be named `Flutter.xcprivacy`.
+- The SDK name may not always match the framework name. To identify the correct framework name, check the Application Bundle after building your project.
+
+## Important Considerations
+
+- Whenever possible, upgrade to the latest SDK version that supports privacy manifests to avoid unnecessary risks.
+- This tool is a temporary solution and should not replace proper SDK management practices.
+- Before submitting your app, ensure that the privacy manifests comply with the latest App Store requirements.
