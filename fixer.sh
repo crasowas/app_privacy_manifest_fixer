@@ -41,8 +41,8 @@ templates_dir="$fixer_dir/Templates"
 user_templates_dir="$fixer_dir/Templates/UserTemplates"
 
 # Common privacy manifest template file names
-readonly APP_TEMPLATE_FILE_NAME="APP.xcprivacy"
-readonly FRAMEWORK_TEMPLATE_FILE_NAME="Framework.xcprivacy"
+readonly APP_TEMPLATE_FILE_NAME="AppTemplate.xcprivacy"
+readonly FRAMEWORK_TEMPLATE_FILE_NAME="FrameworkTemplate.xcprivacy"
 
 # Use user-defined app privacy manifest template if it exists, otherwise fallback to default
 app_template_file="$user_templates_dir/$APP_TEMPLATE_FILE_NAME"
@@ -285,9 +285,9 @@ copy_template_file() {
 # Check if the specified template file should be modified
 #
 # The following template files will be modified based on analysis:
-# * Templates/App.xcprivacy
-# * Templates/Framework.xcprivacy
-# * Templates/UserTemplates/Framework.xcprivacy
+# * Templates/AppTemplate.xcprivacy
+# * Templates/FrameworkTemplate.xcprivacy
+# * Templates/UserTemplates/FrameworkTemplate.xcprivacy
 is_template_modifiable() {
     local template_file="$1"
     

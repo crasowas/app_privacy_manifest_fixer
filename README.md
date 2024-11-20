@@ -58,17 +58,17 @@ The privacy manifest templates are stored in the [Templates](https://github.com/
 
 Privacy manifest templates are divided into three types:
 
-* **App.xcprivacy:** The privacy manifest template for the app.
-* **Framework.xcprivacy:** A general privacy manifest template for frameworks.
+* **AppTemplate.xcprivacy:** The privacy manifest template for the app.
+* **FrameworkTemplate.xcprivacy:** A general privacy manifest template for frameworks.
 * **FrameworkName.xcprivacy:** A specific privacy manifest template for a framework, available in the `UserTemplates` directory only.
 
 You can create custom templates in the `UserTemplates` directory as follows:
 
-* `Templates/UserTemplates/App.xcprivacy`
-* `Templates/UserTemplates/Framework.xcprivacy`
+* `Templates/UserTemplates/AppTemplate.xcprivacy`
+* `Templates/UserTemplates/FrameworkTemplate.xcprivacy`
 * `Templates/UserTemplates/FrameworkName.xcprivacy`
 
-Among these, `Framework.xcprivacy` will be modified based on API usage analysis results to fix the privacy manifest.
+Among these, `FrameworkTemplate.xcprivacy` will be modified based on API usage analysis results to fix the privacy manifest.
 
 **Note:** Name each template using the format `FrameworkName.xcprivacy`, where `FrameworkName` is the name of the specific framework. For example, the template for the `Flutter` framework should be named `Flutter.xcprivacy`. 
 The SDK name may not always match the Framework name. If unsure, check the Application Bundle after building to identify the correct Framework name associated with the SDK.
