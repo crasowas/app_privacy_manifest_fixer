@@ -9,26 +9,26 @@ require 'xcodeproj'
 RUN_SCRIPT_PHASE_NAME = 'Fix Privacy Manifest'
 
 if ARGV.length < 2
-  puts "Usage: ruby xcode_helper.rb <project_path> <script_content> [install_builds_only (true|false)]"
+  puts "Usage: ruby xcode_install_helper.rb <project_path> <script_content> [install_builds_only (true|false)]"
   exit 1
 end
 
-project_root_path = ARGV[0]
+project_path = ARGV[0]
 run_script_content = ARGV[1]
 install_builds_only = ARGV[2] == 'true'
 
-# Find the first .xcodeproj file in the project root directory
-project_path = Dir.glob(File.join(project_root_path, "*.xcodeproj")).first
+# Find the first .xcodeproj file in the project directory
+xcodeproj_path = Dir.glob(File.join(project_path, "*.xcodeproj")).first
 
-# Validate the project path
-unless project_path
+# Validate the .xcodeproj file existence
+unless xcodeproj_path
   puts "Error: No .xcodeproj file found in the specified directory."
   exit 1
 end
 
 # Open the Xcode project file
 begin
-  project = Xcodeproj::Project.open(project_path)
+  project = Xcodeproj::Project.open(xcodeproj_path)
 rescue StandardError => e
   puts "Error: Unable to open the project file - #{e.message}"
   exit 1
@@ -63,7 +63,7 @@ new_phase.run_only_for_deployment_postprocessing = install_builds_only ? '1' : '
 # Save the project file
 begin
   project.save
-  puts "Run Script '#{RUN_SCRIPT_PHASE_NAME}' added successfully!"
+  puts "Successfully added the Run Script phase: '#{RUN_SCRIPT_PHASE_NAME}'."
 rescue StandardError => e
   puts "Error: Unable to save the project file - #{e.message}"
   exit 1

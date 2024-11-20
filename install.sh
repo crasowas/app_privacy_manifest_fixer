@@ -42,7 +42,7 @@ if ! gem list -i xcodeproj &>/dev/null; then
         echo "Please install 'xcodeproj' manually and re-run the script."
         exit 1
     fi
-    gem install xcodeproj || { echo "Failed to install xcodeproj"; exit 1; }
+    gem install xcodeproj || { echo "Failed to install 'xcodeproj'."; exit 1; }
 fi
 
 script_path="$(realpath "$0")"
@@ -60,4 +60,4 @@ fi
 run_script_content="$run_script_content/fixer.sh ${options[@]}"
 
 # Execute the Ruby helper script
-ruby "$fixer_path/Helper/xcode_helper.rb" "$project_path" "$run_script_content" "$install_builds_only"
+ruby "$fixer_path/Helper/xcode_install_helper.rb" "$project_path" "$run_script_content" "$install_builds_only"
