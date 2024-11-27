@@ -1,6 +1,6 @@
 # App Privacy Manifest Fixer
 
-This shell-based tool is built to analyze and update privacy manifests in iOS apps, ensuring compliance with App Store requirements.
+This shell-based tool is designed to analyze and update privacy manifests in iOS apps, ensuring compliance with App Store requirements, with its API usage analysis implemented based on the [app_store_required_privacy_manifest_analyser](https://github.com/crasowas/app_store_required_privacy_manifest_analyser).
 
 > **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.  
 > Use this tool only in the following cases:
@@ -13,7 +13,7 @@ This shell-based tool is built to analyze and update privacy manifests in iOS ap
 - **Seamless Integration**: Easily integrates or uninstalls from your iOS project.
 - **Automated Analysis**: Analyzes API usage and updates privacy manifests during the build process.
 - **Custom Templates**: Supports customizable privacy manifest templates for apps, generic frameworks, and specific frameworks.
-- **Easy Upgrades**: Includes a script to easily upgrade the tool to the latest version.
+- **Easy Upgrades**: Includes a script for upgrading the tool to the latest version.
 
 ## Installation Guide
 
@@ -60,7 +60,7 @@ If installed with the `--install-builds-only` option, the tool runs only during 
 
 ### Upgrade the Tool
 
-To update to the latest version, execute:
+To update to the latest version, run the following command:
 
 ```shell
 sh upgrade.sh
@@ -78,7 +78,52 @@ Templates are categorized as follows:
 - **FrameworkTemplate.xcprivacy**: A generic privacy manifest template for frameworks.
 - **FrameworkName.xcprivacy**: A privacy manifest template for a specific framework, available only in the `UserTemplates` directory.
 
-### Create Custom Templates
+### Template Priority
+
+For apps, the privacy manifest template priority is as follows:
+
+- `Templates/UserTemplates/AppTemplate.xcprivacy` > `Templates/AppTemplate.xcprivacy`
+
+For a specific framework, the privacy manifest template priority is as follows:
+
+- `Templates/UserTemplates/FrameworkName.xcprivacy` > `Templates/UserTemplates/FrameworkTemplate.xcprivacy` > `Templates/FrameworkTemplate.xcprivacy`
+
+### Default Templates
+
+The default templates are located in the `Templates` root directory and currently include the following templates:
+
+- `Templates/AppTemplate.xcprivacy`
+- `Templates/FrameworkTemplate.xcprivacy`
+
+These templates will be modified based on the API usage analysis results. Specifically, the `NSPrivacyAccessedAPIType` entries in the templates will be adjusted to generate a new privacy manifest for the app or framework's privacy compliance.
+
+**If you need to make any adjustments to the privacy manifest templates, such as the following scenarios, please avoid modifying the default templates directly. Instead, use custom templates. If a custom template with the same name exists, it will take precedence over the default template.**
+
+- Generating a non-compliant privacy manifest due to inaccurate API usage analysis.
+- Modifying the reason declared in the template.
+- Adding declarations for collected data.
+
+The API categories and their associated reasons in `AppTemplate.xcprivacy` are listed below:
+
+| NSPrivacyAccessedAPIType                                                                                                                                            | NSPrivacyAccessedAPITypeReasons        |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
+| [NSPrivacyAccessedAPICategoryFileTimestamp](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#File-timestamp-APIs)    | C617.1: Inside app or group container  |
+| [NSPrivacyAccessedAPICategorySystemBootTime](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#System-boot-time-APIs) | 35F9.1: Measure time on-device         |
+| [NSPrivacyAccessedAPICategoryDiskSpace](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Disk-space-APIs)            | E174.1: Write or delete file on-device |
+| [NSPrivacyAccessedAPICategoryActiveKeyboards](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Active-keyboard-APIs) | 54BD.1: Customize UI on-device         |
+| [NSPrivacyAccessedAPICategoryUserDefaults](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#User-defaults-APIs)      | CA92.1: Access info from same app      |
+
+The API categories and their associated reasons in `FrameworkTemplate.xcprivacy` are listed below:
+
+| NSPrivacyAccessedAPIType                                                                                                                                            | NSPrivacyAccessedAPITypeReasons         |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
+| [NSPrivacyAccessedAPICategoryFileTimestamp](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#File-timestamp-APIs)    | 0A2A.1: 3rd-party SDK wrapper on-device |
+| [NSPrivacyAccessedAPICategorySystemBootTime](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#System-boot-time-APIs) | 35F9.1: Measure time on-device          |
+| [NSPrivacyAccessedAPICategoryDiskSpace](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Disk-space-APIs)            | E174.1: Write or delete file on-device  |
+| [NSPrivacyAccessedAPICategoryActiveKeyboards](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Active-keyboard-APIs) | 54BD.1: Customize UI on-device          |
+| [NSPrivacyAccessedAPICategoryUserDefaults](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#User-defaults-APIs)      | C56D.1: 3rd-party SDK wrapper on-device |
+
+### Custom Templates
 
 To create custom templates, place them in the `UserTemplates` directory with the following structure:
 
@@ -86,7 +131,7 @@ To create custom templates, place them in the `UserTemplates` directory with the
 - `Templates/UserTemplates/FrameworkTemplate.xcprivacy`
 - `Templates/UserTemplates/FrameworkName.xcprivacy`
 
-Among these, only `FrameworkTemplate.xcprivacy` will be modified based on API usage analysis results to produce a new privacy manifest, while other templates will remain unchanged.
+Among these templates, only `FrameworkTemplate.xcprivacy` will be modified based on the API usage analysis results to adjust the `NSPrivacyAccessedAPIType` entries, thereby generating a new privacy manifest for framework fixes. The other templates will remain unchanged and will be directly used for fixes.
 
 **Important Notes:**
 
