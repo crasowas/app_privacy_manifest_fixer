@@ -1,12 +1,17 @@
 # App Privacy Manifest Fixer
 
+[![Latest Version](https://img.shields.io/github/v/release/crasowas/app_privacy_manifest_fixer?logo=github)](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
 This shell-based tool is designed to analyze and update privacy manifests in iOS apps, ensuring compliance with App Store requirements, with its API usage analysis implemented based on the [app_store_required_privacy_manifest_analyser](https://github.com/crasowas/app_store_required_privacy_manifest_analyser).
 
-> **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.  
-> Use this tool only in the following cases:
+> **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.
+> Use this tool primarily in the following scenarios:
 > 1. The SDK has been deprecated and is no longer maintained.
 > 2. The latest SDK version is incompatible with your iOS project.
 > 3. The SDK does not provide a privacy manifest.
+> 4. Frameworks that are not standalone SDKs but are generated as part of the build process, such as `App.framework` in `Flutter` projects.
+> 5. Dependencies of the SDK have the issues mentioned above, and these cannot be resolved by upgrading the main SDK.
 
 ## Features
 
