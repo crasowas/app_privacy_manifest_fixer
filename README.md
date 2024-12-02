@@ -5,7 +5,7 @@
 
 This shell-based tool is designed to analyze and update privacy manifests in iOS apps, ensuring compliance with App Store requirements, with its API usage analysis implemented based on the [app_store_required_privacy_manifest_analyser](https://github.com/crasowas/app_store_required_privacy_manifest_analyser).
 
-> **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.
+> **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.  
 > Use this tool primarily in the following scenarios:
 > 1. The SDK has been deprecated and is no longer maintained.
 > 2. The latest SDK version is incompatible with your iOS project.
