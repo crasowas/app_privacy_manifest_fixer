@@ -1,3 +1,6 @@
+## 1.2.1
+- Fix backup issue with empty user templates directory.
+
 ## 1.2.0
 - Add uninstall script.
 
