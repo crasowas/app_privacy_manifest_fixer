@@ -15,7 +15,7 @@ This shell-based tool is designed to analyze and update privacy manifests in iOS
 
 ## Features
 
-- **Seamless Integration**: Easily integrates or uninstalls from your iOS project.
+- **Seamless Integration**: Easily installs or uninstalls from your iOS project.
 - **Automated Analysis**: Analyzes API usage and updates privacy manifests during the build process.
 - **Custom Templates**: Supports customizable privacy manifest templates for apps, generic frameworks, and specific frameworks.
 - **Easy Upgrades**: Includes a script for upgrading the tool to the latest version.
@@ -24,16 +24,18 @@ This shell-based tool is designed to analyze and update privacy manifests in iOS
 
 ### Download the Latest Version
 
-1. Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest).
-2. Extract the downloaded archive and place the folder in your iOS project directory for better portability.
+1. **Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest).**
+2. **Extract the downloaded archive.** It is recommended to place the extracted directory in your iOS project directory. This approach helps avoid issues with absolute paths and ensures better portability when sharing the project or working on different devices.
 
 ### Install the Tool
 
-Run the following command to integrate the tool into your project:
+Run the following command to install the tool into your project:
 
 ```shell
 sh install.sh <project_path>
 ```
+
+If the command is executed repeatedly, any existing installation will be automatically overwritten.
 
 #### Command Line Options
 
@@ -73,7 +75,9 @@ sh upgrade.sh
 
 ## Privacy Manifest Templates
 
-Privacy manifest templates are stored in the [Templates](https://github.com/crasowas/app_privacy_manifest_fixer/tree/main/Templates) directory. Custom templates can be added to the `UserTemplates` subdirectory, which has a higher priority during processing.
+Privacy manifest templates are stored in the [`Templates`](https://github.com/crasowas/app_privacy_manifest_fixer/tree/main/Templates) directory, which already includes default templates.
+
+**How can you customize the privacy manifests for apps or SDKs? Simply use [custom templates](#custom-templates)!**
 
 ### Template Types
 
@@ -85,11 +89,11 @@ Templates are categorized as follows:
 
 ### Template Priority
 
-For apps, the privacy manifest template priority is as follows:
+For an app, the priority of privacy manifest templates is as follows:
 
 - `Templates/UserTemplates/AppTemplate.xcprivacy` > `Templates/AppTemplate.xcprivacy`
 
-For a specific framework, the privacy manifest template priority is as follows:
+For a specific framework, the priority of privacy manifest templates is as follows:
 
 - `Templates/UserTemplates/FrameworkName.xcprivacy` > `Templates/UserTemplates/FrameworkTemplate.xcprivacy` > `Templates/FrameworkTemplate.xcprivacy`
 

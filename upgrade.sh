@@ -47,7 +47,7 @@ local_version="$(cat "$fixer_root_dir/VERSION")"
 # Skip upgrade if the current version is already the latest
 if [ "$local_version" == "$latest_version" ]; then
     echo "Version $latest_version • $published_time."
-    echo "Already up to date."
+    echo "Already up-to-date."
     exit 0
 fi
 

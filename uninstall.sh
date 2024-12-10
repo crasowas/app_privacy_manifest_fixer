@@ -32,7 +32,12 @@ if ! gem list -i xcodeproj &>/dev/null; then
 fi
 
 script_path="$(realpath "$0")"
-fixer_path="$(dirname "$script_path")"
+fixer_root_dir="$(dirname "$script_path")"
+
+# Convert project path to an absolute path if it is relative
+if [[ ! "$project_path" = /* ]]; then
+    project_path="$(realpath "$project_path")"
+fi
 
 # Execute the Ruby helper script
-ruby "$fixer_path/Helper/xcode_uninstall_helper.rb" "$project_path"
+ruby "$fixer_root_dir/Helper/xcode_uninstall_helper.rb" "$project_path"

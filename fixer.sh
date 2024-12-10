@@ -32,13 +32,13 @@ if [ ! -d "$app_dir" ]; then
     exit 1
 fi
 
-# Absolute path of the script and the fixer directory
+# Absolute path of the script and the fixer root directory
 script_path="$(realpath "$0")"
-fixer_dir="$(dirname "$script_path")"
+fixer_root_dir="$(dirname "$script_path")"
 
 # Default template paths
-templates_dir="$fixer_dir/Templates"
-user_templates_dir="$fixer_dir/Templates/UserTemplates"
+templates_dir="$fixer_root_dir/Templates"
+user_templates_dir="$fixer_root_dir/Templates/UserTemplates"
 
 # Common privacy manifest template file names
 readonly APP_TEMPLATE_FILE_NAME="AppTemplate.xcprivacy"
