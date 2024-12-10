@@ -34,31 +34,35 @@ rescue StandardError => e
   exit 1
 end
 
-# Get the first target in the project
-target = project.targets.first
+# Process all targets in the project
+project.targets.each do |target|
+  # Check if the target is an application target
+  if target.product_type == 'com.apple.product-type.application'
+    puts "Processing target: #{target.name}..."
 
-if target.nil?
-  puts "Error: No targets found in the project."
-  exit 1
+    # Check for an existing Run Script phase with the specified name
+    existing_phase = target.shell_script_build_phases.find { |phase| phase.name == RUN_SCRIPT_PHASE_NAME }
+
+    # Remove the existing Run Script phase if found
+    if existing_phase
+      puts "  - Removing existing Run Script."
+      target.build_phases.delete(existing_phase)
+    else
+      puts "  - No existing Run Script found."
+    end
+
+    # Add the new Run Script phase at the end
+    puts "  - Adding new Run Script."
+    new_phase = target.new_shell_script_build_phase(RUN_SCRIPT_PHASE_NAME)
+    new_phase.shell_script = run_script_content
+    # Disable showing environment variables in the build log
+    new_phase.show_env_vars_in_log = '0'
+    # Run only for deployment post-processing if install_builds_only is true
+    new_phase.run_only_for_deployment_postprocessing = install_builds_only ? '1' : '0'
+  else
+    puts "Skipping non-application target: #{target.name}."
+  end
 end
-
-# Check for an existing Run Script phase with the specified name
-existing_phase = target.shell_script_build_phases.find { |phase| phase.name == RUN_SCRIPT_PHASE_NAME }
-
-# Remove the existing Run Script phase if found
-if existing_phase
-  puts "Removing existing Run Script..."
-  target.build_phases.delete(existing_phase)
-end
-
-# Add the new Run Script phase at the end
-puts "Adding Run Script..."
-new_phase = target.new_shell_script_build_phase(RUN_SCRIPT_PHASE_NAME)
-new_phase.shell_script = run_script_content
-# Disable showing environment variables in the build log
-new_phase.show_env_vars_in_log = '0'
-# Run only for deployment post-processing if install_builds_only is true
-new_phase.run_only_for_deployment_postprocessing = install_builds_only ? '1' : '0'
 
 # Save the project file
 begin

@@ -32,21 +32,25 @@ rescue StandardError => e
   exit 1
 end
 
-# Get the first target in the project
-target = project.targets.first
+# Process all targets in the project
+project.targets.each do |target|
+  # Check if the target is an application target
+  if target.product_type == 'com.apple.product-type.application'
+    puts "Processing target: #{target.name}..."
 
-if target.nil?
-  puts "Error: No targets found in the project."
-  exit 1
-end
+    # Check for an existing Run Script phase with the specified name
+    existing_phase = target.shell_script_build_phases.find { |phase| phase.name == RUN_SCRIPT_PHASE_NAME }
 
-# Check for an existing Run Script phase with the specified name
-existing_phase = target.shell_script_build_phases.find { |phase| phase.name == RUN_SCRIPT_PHASE_NAME }
-
-# Remove the existing Run Script phase if found
-if existing_phase
-  puts "Removing existing Run Script..."
-  target.build_phases.delete(existing_phase)
+    # Remove the existing Run Script phase if found
+    if existing_phase
+      puts "  - Removing existing Run Script."
+      target.build_phases.delete(existing_phase)
+    else
+      puts "  - No existing Run Script found."
+    end
+  else
+    puts "Skipping non-application target: #{target.name}."
+  end
 end
 
 # Save the project file
