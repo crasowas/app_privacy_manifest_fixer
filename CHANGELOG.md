@@ -1,3 +1,7 @@
+## 1.2.3
+- Fix issue with relative path parameter.
+- Add support for all application targets.
+
 ## 1.2.1
 - Fix backup issue with empty user templates directory.
 
