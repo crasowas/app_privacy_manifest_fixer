@@ -1,3 +1,6 @@
+## 1.3.0
+- Add privacy access report generation.
+
 ## 1.2.3
 - Fix issue with relative path parameter.
 - Add support for all application targets.
