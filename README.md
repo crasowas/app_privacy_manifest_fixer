@@ -45,6 +45,12 @@ If the command is executed repeatedly, any existing installation will be automat
   sh install.sh <project_path> -f
   ```
 
+- **Silent mode**: Use the `-s` option to disable build output, meaning the app will not be copied and the privacy access report will not be generated. When not enabled, the built app and its privacy access report will be saved to the `app_privacy_manifest_fixer/Build` directory.
+
+  ```shell
+  sh install.sh <project_path> -s
+  ```
+
 - **Run only during install builds** (recommended): Use the `--install-builds-only` option to ensure the tool runs exclusively during install builds (e.g., Archive operations), improving development build performance.
 
   ```shell
@@ -71,6 +77,20 @@ To update to the latest version, run the following command:
 
 ```shell
 sh upgrade.sh
+```
+
+## Privacy Access Report
+
+By default, silent mode is disabled, and the tool automatically generates privacy access reports for both the original and fixed versions of the app during each project build.
+
+### Generate a Report Manually
+
+To manually generate a privacy access report for a specific app, run the following command:
+
+```shell
+sh Report/report.sh <app_path> <report_output_path>
+# <app_path>: Path to the app (e.g., /path/to/App.app)
+# <report_output_path>: Path to save the report file (e.g., /path/to/report.html)
 ```
 
 ## Privacy Manifest Templates

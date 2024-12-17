@@ -1,0 +1,106 @@
+<!--
+  Copyright (c) 2024, crasowas.
+
+  Use of this source code is governed by a MIT-style license
+  that can be found in the LICENSE file or at
+  https://opensource.org/licenses/MIT.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Access Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+            min-width: 725px;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            margin: 0 0 15px;
+            padding: 12px 20px;
+            background-color: #5a9e6d;
+            color: #fff;
+            border-radius: 8px;
+        }
+
+        a {
+            text-decoration: none;
+            color: #5a9e6d;
+            background-color: #fcfcfc;
+            padding: 8px 16px;
+            border: 1px solid #5a9e6d;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-right: 16px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #5a9e6d;
+            color: #fff;
+        }
+
+        a.warning {
+            color: #e0b73c;
+            background-color: #fcfcfc;
+            border: 1px solid #e0b73c;
+        }
+
+        a.warning:hover {
+            background-color: #e0b73c;
+            color: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px 20px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #b0b8b1;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+    {{REPORT_CONTENT}}
+</body>
+
+</html>
