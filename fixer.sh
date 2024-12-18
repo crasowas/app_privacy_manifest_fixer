@@ -69,7 +69,7 @@ if [ "$silent" == false ]; then
     template_usage_records=()
     
     # Build output directory
-    build_dir="$fixer_root_dir/Build/${PRODUCT_NAME}_${MARKETING_VERSION}_${CURRENT_PROJECT_VERSION}_$(date +%Y%m%d%H%M%S)"
+    build_dir="$fixer_root_dir/Build/${PRODUCT_NAME}-${CONFIGURATION}_${MARKETING_VERSION}_${CURRENT_PROJECT_VERSION}_$(date +%Y%m%d%H%M%S)"
     # Ensure the build directory exists
     mkdir -p "$build_dir"
 fi
