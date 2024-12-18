@@ -59,6 +59,8 @@ project.targets.each do |target|
     new_phase.show_env_vars_in_log = '0'
     # Run only for deployment post-processing if install_builds_only is true
     new_phase.run_only_for_deployment_postprocessing = install_builds_only ? '1' : '0'
+    # Disable dependency analysis to force the script to run on every build, unless restricted to deployment builds by post-processing setting
+    new_phase.always_out_of_date = '1'
   else
     puts "Skipping non-application target: #{target.name}."
   end
