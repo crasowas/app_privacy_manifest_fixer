@@ -93,6 +93,7 @@ readonly API_CATEGORIES=(
 )
 
 # Symbol of the required reason APIs and their categories
+#
 # See also:
 #   * https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api
 #   * https://github.com/Wooder/ios_17_required_reason_api_scanner/blob/main/required_reason_api_binary_scanner.sh
@@ -163,7 +164,7 @@ function get_dependency_name() {
     local dep_path="$1"
     local dir_name="$(basename "$dep_path")"
 
-    # Remove .app, .framework, and .xcframework suffixes
+    # Remove `.app`, `.framework`, and `.xcframework` suffixes
     local dep_name="${dir_name%.*}"
     
     echo "$dep_name"
@@ -332,8 +333,19 @@ function fix() {
     local dir_path="$1"
     local force_resign="$2"
     
-    local privacy_manifest_files=($(search_privacy_manifest_files "$dir_path"))
-    local privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
+    local privacy_manifest_file=""
+    
+    if [[ "$dir_path" == *.app ]]; then
+        # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle
+        # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
+        privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+    else
+        # Per the documentation, the privacy manifest should be placed at the root of the framework’s bundle
+        # Some SDKs don’t follow the guideline, so we use a search-based approach for now
+        # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-framework
+        local privacy_manifest_files=($(search_privacy_manifest_files "$dir_path"))
+        privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
+    fi
     
     # Check if the privacy manifest file exists
     if [ -f "$privacy_manifest_file" ]; then
@@ -367,15 +379,15 @@ function fix() {
             # Convert categories to a single space-separated string for easy matching
             local categories_set=" ${categories[*]} "
             
-            # Iterate through each element in API_CATEGORIES
+            # Iterate through each element in `API_CATEGORIES`
             for element in "${API_CATEGORIES[@]}"; do
-                # If element is not found in categories_set, add it to remove_categories
+                # If element is not found in `categories_set`, add it to `remove_categories`
                 if [[ ! $categories_set =~ " $element " ]]; then
                     remove_categories+=("$element")
                 fi
             done
         else
-            # If categories is empty, add all of API_CATEGORIES to remove_categories
+            # If categories is empty, add all of `API_CATEGORIES` to `remove_categories`
             remove_categories=("${API_CATEGORIES[@]}")
         fi
 

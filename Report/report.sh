@@ -197,8 +197,20 @@ function generate_html_tbody() {
 function generate_report_content() {
     local dir_path="$1"
     
-    local privacy_manifest_files=($(search_privacy_manifest_files "$dir_path"))
-    local privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
+    local privacy_manifest_file=""
+    
+    if [[ "$dir_path" == *.app ]]; then
+        # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle
+        # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
+        privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+    else
+        # Per the documentation, the privacy manifest should be placed at the root of the framework’s bundle
+        # Some SDKs don’t follow the guideline, so we use a search-based approach for now
+        # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-framework
+        local privacy_manifest_files=($(search_privacy_manifest_files "$dir_path"))
+        privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
+    fi
+    
     local name="$(basename "$dir_path")"
     local card="$(generate_html_title "$name")"
     
