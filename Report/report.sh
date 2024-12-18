@@ -122,6 +122,11 @@ function analyze_privacy_accessed_api() {
             
             results+=("$api_type$DELIMITER$api_reasons")
         done
+        
+        # Add placeholder 'N/A' if the accessed privacy API types array is empty
+        if [ ${#results[@]} -eq 0 ]; then
+            results+=("N/A${DELIMITER}N/A")
+        fi
     fi
 
     echo "${results[@]}"
