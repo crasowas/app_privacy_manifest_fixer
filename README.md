@@ -17,6 +17,7 @@ This shell-based tool is designed to analyze and update privacy manifests in iOS
 
 - **Seamless Integration**: Easily installs or uninstalls from your iOS project.
 - **Automated Analysis**: Analyzes API usage and updates privacy manifests during the build process.
+- **Privacy Access Report**: Easily review app and SDKs' privacy access details, along with the privacy manifest templates used for fixes.
 - **Custom Templates**: Supports customizable privacy manifest templates for apps, generic frameworks, and specific frameworks.
 - **Easy Upgrades**: Includes a script for upgrading the tool to the latest version.
 
@@ -39,7 +40,7 @@ If the command is executed repeatedly, any existing installation will be automat
 
 #### Command Line Options
 
-- **Force overwrite existing privacy manifests** (not recommended): Use the `-f` option to overwrite existing privacy manifests.
+- **Force overwrite existing privacy manifests (not recommended)**: Use the `-f` option to overwrite existing privacy manifests.
 
   ```shell
   sh install.sh <project_path> -f
@@ -51,11 +52,13 @@ If the command is executed repeatedly, any existing installation will be automat
   sh install.sh <project_path> -s
   ```
 
-- **Run only during install builds** (recommended): Use the `--install-builds-only` option to ensure the tool runs exclusively during install builds (e.g., Archive operations), improving development build performance.
+- **Run only during install builds (recommended)**: Use the `--install-builds-only` option to ensure the tool runs exclusively during install builds (e.g., Archive operations), improving development build performance.
 
   ```shell
   sh install.sh <project_path> --install-builds-only
   ```
+  
+  **Note: If the app is built in a development environment (with `*.debug.dylib` files), the tool's API usage analysis may be inaccurate.**
 
 ### Uninstall the Tool
 
@@ -82,6 +85,12 @@ sh upgrade.sh
 ## Privacy Access Report
 
 By default, silent mode is disabled, and the tool automatically generates privacy access reports for both the original and fixed versions of the app during each project build.
+
+### Report Examples
+
+| Original App Report                                                                            | Fixed App Report                                                                            |
+|------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| ![Original App Report](https://img.crasowas.dev/app_privacy_manifest_fixer/20241218230746.png) | ![Fixed App Report](https://img.crasowas.dev/app_privacy_manifest_fixer/20241218230822.png) |
 
 ### Generate a Report Manually
 
@@ -165,7 +174,7 @@ Among these templates, only `FrameworkTemplate.xcprivacy` will be modified based
 **Important Notes:**
 
 - Specific framework templates must follow the naming convention `FrameworkName.xcprivacy`, where `FrameworkName` matches the framework's name. For example, the `Flutter` framework template should be named `Flutter.xcprivacy`.
-- The SDK name may not always match the framework name. To identify the correct framework name, check the Application Bundle after building your project.
+- The SDK name may not always match the framework name. To identify the correct framework name, check the application bundle after building your project.
 
 ## Important Considerations
 
