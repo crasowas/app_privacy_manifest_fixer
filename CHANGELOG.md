@@ -1,3 +1,10 @@
+## 1.3.5
+- Fix issue with inaccurate privacy manifest search.
+- Disable dependency analysis to force the script to run on every build.
+- Add placeholder for privacy access report.
+- Update build output directory naming convention.
+- Add examples for privacy access report.
+
 ## 1.3.0
 - Add privacy access report generation.
 
