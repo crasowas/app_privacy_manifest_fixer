@@ -47,8 +47,6 @@ project.targets.each do |target|
     if existing_phase
       puts "  - Removing existing Run Script."
       target.build_phases.delete(existing_phase)
-    else
-      puts "  - No existing Run Script found."
     end
 
     # Add the new Run Script phase at the end
