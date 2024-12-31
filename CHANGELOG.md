@@ -1,3 +1,7 @@
+## 1.3.7
+- Enhance API symbols analysis with strings tool.
+- Improve performance of API usage analysis.
+
 ## 1.3.5
 - Fix issue with inaccurate privacy manifest search.
 - Disable dependency analysis to force the script to run on every build.
