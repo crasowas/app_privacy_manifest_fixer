@@ -30,6 +30,13 @@ if ! rsync -a "$report_template_file" "$report_output_file"; then
     exit 1
 fi
 
+# Read the current version from the VERSION file
+version_file="$report_root_dir/../VERSION"
+version="N/A"
+if [ -f "$version_file" ]; then
+    version=$(cat "$version_file")
+fi
+
 # Initialize report content
 report_content=""
 
@@ -115,6 +122,10 @@ function analyze_privacy_accessed_api() {
         for ((i=1; i<=api_count; i++)); do
             local api_type=$(xmllint --xpath "(//dict/key[text()='NSPrivacyAccessedAPIType']/following-sibling::string[1])[$i]/text()" "$privacy_manifest_file")
             local api_reasons=$(xmllint --xpath "(//dict/key[text()='NSPrivacyAccessedAPITypeReasons']/following-sibling::array[1])[position()=$i]/string/text()" "$privacy_manifest_file" 2>/dev/null | paste -sd "/" -)
+            
+            if [ -z "$api_type" ]; then
+                api_type="N/A"
+            fi
             
             if [ -z "$api_reasons" ]; then
                 api_reasons="N/A"
@@ -260,8 +271,8 @@ function generate_frameworks_report_content() {
 
 # Generate the final report with all content
 function generate_final_report() {
-    # Replace placeholder in the template with the report content
-    sed -i "" "s|{{REPORT_CONTENT}}|${report_content}|g" "$report_output_file"
+    # Replace placeholders in the template with the version and report content
+    sed -i "" -e "s|{{VERSION}}|$version|g" -e "s|{{REPORT_CONTENT}}|${report_content}|g" "$report_output_file"
     echo "Privacy Access Report has been generated: $report_output_file."
 }
 
