@@ -14,15 +14,18 @@ silent=false
 
 # Parse command-line options
 while getopts ":fs" opt; do
-  case $opt in
-    f) force=true
-    ;;
-    s) silent=true
-    ;;
-    \?) echo "Invalid option: -$OPTARG" >&2
-        exit 1
-    ;;
-  esac
+    case $opt in
+        f)
+            force=true
+            ;;
+        s)
+            silent=true
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
 done
 
 shift $((OPTIND - 1))
@@ -395,7 +398,7 @@ function fix() {
             remove_categories=("${API_CATEGORIES[@]}")
         fi
 
-        # Remove extra spaces in the XML file once for easier node removal
+        # Remove extra spaces in the XML file to simplify node removal
         xmllint --noblanks "$privacy_manifest_file" -o "$privacy_manifest_file"
 
         # Build a sed command to remove all matching nodes at once

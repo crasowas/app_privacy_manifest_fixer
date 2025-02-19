@@ -5,19 +5,21 @@
   that can be found in the LICENSE file or at
   https://opensource.org/licenses/MIT.
 -->
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Privacy Access Report</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f9f9f9;
             color: #333;
+            background-color: #f9f9f9;
             line-height: 1.6;
         }
 
@@ -34,8 +36,8 @@
             font-size: 1.2em;
             margin: 0 0 15px;
             padding: 12px 20px;
-            background-color: #5a9e6d;
             color: #fff;
+            background-color: #5a9e6d;
             border-radius: 8px;
         }
 
@@ -52,8 +54,8 @@
         }
 
         a:hover {
-            background-color: #5a9e6d;
             color: #fff;
+            background-color: #5a9e6d;
         }
 
         a.warning {
@@ -63,8 +65,8 @@
         }
 
         a.warning:hover {
-            background-color: #e0b73c;
             color: #fff;
+            background-color: #e0b73c;
         }
 
         table {
@@ -84,8 +86,8 @@
         }
 
         th {
-            background-color: #b0b8b1;
             color: #fff;
+            background-color: #b0b8b1;
             font-weight: bold;
         }
 
@@ -98,15 +100,14 @@
         }
     </style>
 </head>
-
 <body>
-    <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-        <span>
-            This report is generated using version <strong>{{VERSION}}</strong>.
-        </span>
-        <a href="https://github.com/crasowas/app_privacy_manifest_fixer" target="_blank">Like this project? Star it on GitHub!</a>
-    </div>
-    {{REPORT_CONTENT}}
+<div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+    <span>
+        This report is generated using version <strong>{{VERSION}}</strong>.
+    </span>
+    <a href="https://github.com/crasowas/app_privacy_manifest_fixer" target="_blank">Like this
+        project? 🌟Star it on GitHub!</a>
+</div>
+{{REPORT_CONTENT}}
 </body>
-
 </html>
