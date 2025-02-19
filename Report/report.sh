@@ -120,7 +120,7 @@ function analyze_privacy_accessed_api() {
         local api_count=$(xmllint --xpath 'count(//dict/key[text()="NSPrivacyAccessedAPIType"])' "$privacy_manifest_file")
 
         for ((i=1; i<=api_count; i++)); do
-            local api_type=$(xmllint --xpath "(//dict/key[text()='NSPrivacyAccessedAPIType']/following-sibling::string[1])[$i]/text()" "$privacy_manifest_file")
+            local api_type=$(xmllint --xpath "(//dict/key[text()='NSPrivacyAccessedAPIType']/following-sibling::string[1])[$i]/text()" "$privacy_manifest_file" 2>/dev/null)
             local api_reasons=$(xmllint --xpath "(//dict/key[text()='NSPrivacyAccessedAPITypeReasons']/following-sibling::array[1])[position()=$i]/string/text()" "$privacy_manifest_file" 2>/dev/null | paste -sd "/" -)
             
             if [ -z "$api_type" ]; then
@@ -133,11 +133,6 @@ function analyze_privacy_accessed_api() {
             
             results+=("$api_type$DELIMITER$api_reasons")
         done
-        
-        # Add placeholder 'N/A' if the accessed privacy API types array is empty
-        if [ ${#results[@]} -eq 0 ]; then
-            results+=("N/A${DELIMITER}N/A")
-        fi
     fi
 
     echo "${results[@]}"
@@ -239,11 +234,15 @@ function generate_report_content() {
             card="$card$(generate_html_anchor "Template Used: $(basename "$used_template_file")" "$used_template_file" false)"
         fi
         
-        local thead="$(generate_html_thead "NSPrivacyAccessedAPIType" "NSPrivacyAccessedAPITypeReasons")"
         local trs=($(analyze_privacy_accessed_api "$privacy_manifest_file"))
-        local thbody="$(generate_html_tbody "${trs[@]}")"
         
-        card="$card$(generate_html_table "$thead" "$thbody")"
+        # Generate table only if the accessed privacy API types array is not empty
+        if [[ ${#trs[@]} -gt 0 ]]; then
+            local thead="$(generate_html_thead "NSPrivacyAccessedAPIType" "NSPrivacyAccessedAPITypeReasons")"
+            local tbody="$(generate_html_tbody "${trs[@]}")"
+            
+            card="$card$(generate_html_table "$thead" "$tbody")"
+        fi
     else
         card="$card$(generate_html_anchor "Missing Privacy Manifest" "$dir_path" true)"
     fi
