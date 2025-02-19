@@ -49,6 +49,9 @@ readonly DELIMITER=":"
 # Space escape symbol for handling space in path
 readonly SPACE_ESCAPE="\u0020"
 
+# Default value when the version cannot be retrieved
+readonly UNKNOWN_VERSION="unknown"
+
 # Split a string into substrings using a specified delimiter
 function split_string_by_delimiter() {
     local string="$1"
@@ -138,6 +141,18 @@ function analyze_privacy_accessed_api() {
     echo "${results[@]}"
 }
 
+# Get the version from the specified `Info.plist` file
+get_plist_version() {
+    local plist_file="$1"
+
+    if [ ! -f "$plist_file" ]; then
+        echo "$UNKNOWN_VERSION"
+        return
+    fi
+
+    /usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$plist_file" 2>/dev/null || echo "$UNKNOWN_VERSION"
+}
+
 # Add an HTML <div> element with the `card` class
 function add_html_card_container() {
     local card="$1"
@@ -146,10 +161,11 @@ function add_html_card_container() {
 }
 
 # Generate an HTML <h2> element
-function generate_html_title() {
+function generate_html_header() {
     local title="$1"
+    local version="$2"
     
-    echo "<h2>$title</h2>"
+    echo "<h2>$title<span class=\"version\">Version $version</span></h2>"
 }
 
 # Generate an HTML <a> element with optional `warning` class
@@ -223,7 +239,8 @@ function generate_report_content() {
     fi
     
     local name="$(basename "$dir_path")"
-    local card="$(generate_html_title "$name")"
+    local version="$(get_plist_version "$dir_path/Info.plist")"
+    local card="$(generate_html_header "$name" "$version")"
     
     if [ -f "$privacy_manifest_file" ]; then
         card="$card$(generate_html_anchor "$PRIVACY_MANIFEST_FILE_NAME" "$privacy_manifest_file" false)"
