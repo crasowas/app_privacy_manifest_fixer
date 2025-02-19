@@ -1,3 +1,7 @@
+## 1.3.8
+- Add version info to privacy access report.
+- Remove empty tables from privacy access report.
+
 ## 1.3.7
 - Enhance API symbols analysis with strings tool.
 - Improve performance of API usage analysis.
