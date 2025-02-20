@@ -3,6 +3,8 @@
 [![Latest Version](https://img.shields.io/github/v/release/crasowas/app_privacy_manifest_fixer?logo=github)](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
+**English | [简体中文](./README.zh-CN.md)**
+
 This shell-based tool is designed to analyze and update privacy manifests in iOS apps, ensuring compliance with App Store requirements, with its API usage analysis implemented based on the [app_store_required_privacy_manifest_analyser](https://github.com/crasowas/app_store_required_privacy_manifest_analyser).
 
 > **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.  
@@ -26,7 +28,7 @@ This shell-based tool is designed to analyze and update privacy manifests in iOS
 ### Download the Latest Version
 
 1. **Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest).**
-2. **Extract the downloaded archive.** It is recommended to place the extracted directory in your iOS project directory. This approach helps avoid issues with absolute paths and ensures better portability when sharing the project or working on different devices.
+2. **Extract the downloaded archive. It is recommended to place the extracted directory in your iOS project directory.** This approach helps avoid issues with absolute paths and ensures better portability when sharing the project or working on different devices. Additionally, this allows each iOS project to customize its own privacy manifest templates to meet specific privacy statement requirements.
 
 ### Install the Tool
 
@@ -36,7 +38,7 @@ Run the following command to install the tool into your project:
 sh install.sh <project_path>
 ```
 
-If the command is executed repeatedly, any existing installation will be automatically overwritten.
+If the command is run repeatedly, any existing installation will be automatically overwritten. To modify command-line options, simply rerun the command—no uninstallation required.
 
 #### Command Line Options
 
