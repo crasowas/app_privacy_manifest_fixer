@@ -75,6 +75,9 @@ if [ "$silent" == false ]; then
     build_dir="$fixer_root_dir/Build/${PRODUCT_NAME}-${CONFIGURATION}_${MARKETING_VERSION}_${CURRENT_PROJECT_VERSION}_$(date +%Y%m%d%H%M%S)"
     # Ensure the build directory exists
     mkdir -p "$build_dir"
+
+    # Redirect both stdout and stderr to a log file while keeping console output
+    exec > >(tee "$build_dir/fix.log") 2>&1
 fi
 
 # File name of the privacy manifest
