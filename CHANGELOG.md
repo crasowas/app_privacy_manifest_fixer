@@ -1,3 +1,6 @@
+## 1.3.9
+- Add log file output.
+
 ## 1.3.8
 - Add version info to privacy access report.
 - Remove empty tables from privacy access report.
