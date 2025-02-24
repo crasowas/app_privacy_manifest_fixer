@@ -426,7 +426,7 @@ function fix() {
         xmllint --format "$privacy_manifest_file" -o "$privacy_manifest_file"
     fi
     
-    resign "$path"
+    resign "$dir_path"
     
     echo "✅ Privacy manifest file fixed: $privacy_manifest_file."
 }
