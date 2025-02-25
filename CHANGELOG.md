@@ -1,3 +1,7 @@
+## 1.3.10
+- Fix app re-signing issue.
+- Enhance Build Phases script robustness.
+
 ## 1.3.9
 - Add log file output.
 
