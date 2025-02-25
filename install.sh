@@ -62,7 +62,7 @@ if [[ "$fixer_root_dir" == "$project_path"* ]]; then
     fixer_portable_path="\${PROJECT_DIR}${fixer_relative_path}"
 fi
 
-run_script_content="$fixer_portable_path/fixer.sh ${options[@]}"
+run_script_content="\"$fixer_portable_path/fixer.sh\" ${options[@]}"
 
 # Execute the Ruby helper script
 ruby "$fixer_root_dir/Helper/xcode_install_helper.rb" "$project_path" "$run_script_content" "$install_builds_only"
