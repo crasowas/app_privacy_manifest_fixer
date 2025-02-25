@@ -5,76 +5,116 @@
 
 **English | [简体中文](./README.zh-CN.md)**
 
-This shell-based tool is designed to analyze and update privacy manifests in iOS apps, ensuring compliance with App Store requirements, with its API usage analysis implemented based on the [app_store_required_privacy_manifest_analyser](https://github.com/crasowas/app_store_required_privacy_manifest_analyser).
+This tool is an automation solution based on Shell scripts, designed to analyze and fix the privacy manifest of iOS apps to ensure compliance with App Store requirements. It leverages the [App Store Privacy Manifest Analyzer](https://github.com/crasowas/app_store_required_privacy_manifest_analyser) to analyze API usage within the app and its dependencies, and generate or fix the `PrivacyInfo.xcprivacy` file.
 
-> **Note:** Privacy manifests should ideally be maintained by third-party SDK developers.  
-> Use this tool primarily in the following scenarios:
-> 1. The SDK has been deprecated and is no longer maintained.
-> 2. The latest SDK version is incompatible with your iOS project.
-> 3. The SDK does not provide a privacy manifest.
-> 4. Frameworks that are not standalone SDKs but are generated as part of the build process, such as `App.framework` in `Flutter` projects.
-> 5. Dependencies of the SDK have the issues mentioned above, and these cannot be resolved by upgrading the main SDK.
+## ✨ Features
 
-## Features
+- **Non-Intrusive Integration**: No need to modify the source code or adjust the project structure.
+- **Fast Installation and Uninstallation**: Quickly install or uninstall the tool with a single command.
+- **Automatic Analysis and Fixes**: Automatically analyzes API usage and fixes privacy manifest issues during the project build.
+- **Flexible Template Customization**: Supports custom privacy manifest templates for apps and frameworks, accommodating various usage scenarios.
+- **Privacy Access Report**: Automatically generates a report displaying the `NSPrivacyAccessedAPITypes` declarations for the app and SDKs.
+- **Effortless Version Upgrades**: Provides an upgrade script for quick updates to the latest version.
 
-- **Seamless Integration**: Easily installs or uninstalls from your iOS project.
-- **Automated Analysis**: Analyzes API usage and updates privacy manifests during the build process.
-- **Privacy Access Report**: Easily review app and SDKs' privacy access details, along with the privacy manifest templates used for fixes.
-- **Custom Templates**: Supports customizable privacy manifest templates for apps, generic frameworks, and specific frameworks.
-- **Easy Upgrades**: Includes a script for upgrading the tool to the latest version.
+## 📥 Installation
 
-## Installation Guide
+### Download the Tool
 
-### Download the Latest Version
+1. Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest).
+2. Extract the downloaded file:
+   - The extracted directory is usually named `app_privacy_manifest_fixer-xxx` (where `xxx` is the version number).
+   - It is recommended to rename it to `app_privacy_manifest_fixer` or use the full directory name in subsequent paths.
+   - **It is advised to move the directory to your iOS project to avoid path-related issues on different devices, and to easily customize the privacy manifest template for each project**.
 
-1. **Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest).**
-2. **Extract the downloaded archive. It is recommended to place the extracted directory in your iOS project directory.** This approach helps avoid issues with absolute paths and ensures better portability when sharing the project or working on different devices. Additionally, this allows each iOS project to customize its own privacy manifest templates to meet specific privacy statement requirements.
+### ⚡ Automatic Installation (Recommended)
 
-### Install the Tool
+1. **Navigate to the tool's directory**:
 
-Run the following command to install the tool into your project:
+   ```shell
+   cd /path/to/app_privacy_manifest_fixer
+   ```
 
-```shell
-sh install.sh <project_path>
-```
+2. **Run the installation script**:
 
-If the command is run repeatedly, any existing installation will be automatically overwritten. To modify command-line options, simply rerun the command—no uninstallation required.
+   ```shell
+   sh install.sh <project_path>
+   ```
 
-#### Command Line Options
+   - For Flutter projects, `project_path` should be the path to the `ios` directory within the Flutter project.
+   - If the installation command is run again, the tool will first remove any existing installation (if present). To modify command-line options, simply rerun the installation command without the need to uninstall first.
 
-- **Force overwrite existing privacy manifests (not recommended)**: Use the `-f` option to overwrite existing privacy manifests.
+### Manual Installation
+
+If you prefer not to use the installation script, you can manually add the `Fix Privacy Manifest` task to the Xcode **Build Phases**. Follow these steps:
+
+#### 1. Add the Script in Xcode
+
+- Open your iOS project in Xcode, go to the **TARGETS** tab, and select your app target.
+- Navigate to **Build Phases**, click the **+** button, and select **New Run Script Phase**.
+- Rename the newly created **Run Script** to `Fix Privacy Manifest`.
+- In the **Shell** script box, add the following code:
+
+  ```shell
+  # Use relative path (recommended): if `app_privacy_manifest_fixer` is within the project directory
+  "$PROJECT_DIR/path/to/app_privacy_manifest_fixer/fixer.sh"
+
+  # Use absolute path: if `app_privacy_manifest_fixer` is outside the project directory
+  # "/absolute/path/to/app_privacy_manifest_fixer/fixer.sh"
+  ```
+
+  **Modify `path/to` or `absolute/path/to` as needed, and ensure the paths are correct. Remove or comment out the unused lines accordingly.**
+
+#### 2. Adjust the Script Execution Order
+
+**Move this script after all other Build Phases to ensure the privacy manifest is fixed after all resource copying and build tasks are completed**.
+
+### Build Phases Screenshot
+
+Below is a screenshot of the Xcode Build Phases configuration after successful automatic/manual installation (with no command-line options enabled):
+
+![Build Phases Screenshot](https://img.crasowas.dev/app_privacy_manifest_fixer/20250225011407.png)
+
+## 🚀 Getting Started
+
+After installation, the tool will automatically run with each project build, and the resulting application bundle will include the fixes.
+
+If the `--install-builds-only` command-line option is enabled during installation, the tool will only run during the installation of the build.
+
+### Xcode Build Log Screenshot
+
+Below is a screenshot of the log output from the tool during the project build (by default, it will be saved to the `app_privacy_manifest_fixer/Build` directory, unless the `-s` command-line option is enabled):
+
+![Xcode Build Log Screenshot](https://img.crasowas.dev/app_privacy_manifest_fixer/20250225011551.png)
+
+## 📖 Usage
+
+### Command Line Options
+
+- **Force overwrite existing privacy manifest (Not recommended)**:
 
   ```shell
   sh install.sh <project_path> -f
   ```
 
-- **Silent mode**: Use the `-s` option to disable build output, meaning the app will not be copied and the privacy access report will not be generated. When not enabled, the built app and its privacy access report will be saved to the `app_privacy_manifest_fixer/Build` directory.
+  Enabling the `-f` option will force the tool to generate a new privacy manifest based on the API usage analysis and privacy manifest template, overwriting the existing privacy manifest. By default (without `-f`), the tool only fixes missing privacy manifests.
+
+- **Silent mode**:
 
   ```shell
   sh install.sh <project_path> -s
   ```
 
-- **Run only during install builds (recommended)**: Use the `--install-builds-only` option to ensure the tool runs exclusively during install builds (e.g., Archive operations), improving development build performance.
+  Enabling the `-s` option disables output during the fix process. The tool will no longer copy the generated `*.app`, automatically generate the privacy access report, or output the fix logs. By default (without `-s`), these outputs are stored in the `app_privacy_manifest_fixer/Build` directory.
+
+- **Run only during installation builds (Recommended)**:
 
   ```shell
   sh install.sh <project_path> --install-builds-only
   ```
-  
-  **Note: If the app is built in a development environment (with `*.debug.dylib` files), the tool's API usage analysis may be inaccurate.**
 
-### Uninstall the Tool
+  Enabling the `--install-builds-only` option makes the tool run only during installation builds (such as the **Archive** operation), optimizing build performance for daily development. If you manually installed, this option is ineffective, and you need to manually check the **For install builds only** option.
 
-To remove the tool, run the following command:
-
-```shell
-sh uninstall.sh <project_path>
-```
-
-## Usage
-
-Once installed, the tool runs automatically during each project build.
-
-If installed with the `--install-builds-only` option, the tool runs only during project install builds.
+  **Note**: If the iOS project is built in a development environment (where the generated app contains `*.debug.dylib` files), the tool's API usage analysis results may be inaccurate.
 
 ### Upgrade the Tool
 
@@ -84,39 +124,27 @@ To update to the latest version, run the following command:
 sh upgrade.sh
 ```
 
-## Privacy Access Report
+### Uninstall the Tool
 
-By default, silent mode is disabled, and the tool automatically generates privacy access reports for both the original and fixed versions of the app during each project build.
-
-### Report Examples
-
-| Original App Report                                                                            | Fixed App Report                                                                            |
-|------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| ![Original App Report](https://img.crasowas.dev/app_privacy_manifest_fixer/20241218230746.png) | ![Fixed App Report](https://img.crasowas.dev/app_privacy_manifest_fixer/20241218230822.png) |
-
-### Generate a Report Manually
-
-To manually generate a privacy access report for a specific app, run the following command:
+To quickly uninstall the tool, use the following command:
 
 ```shell
-sh Report/report.sh <app_path> <report_output_path>
-# <app_path>: Path to the app (e.g., /path/to/App.app)
-# <report_output_path>: Path to save the report file (e.g., /path/to/report.html)
+sh uninstall.sh <project_path>
 ```
 
-## Privacy Manifest Templates
+## 🔥 Privacy Manifest Templates
 
-Privacy manifest templates are stored in the [`Templates`](https://github.com/crasowas/app_privacy_manifest_fixer/tree/main/Templates) directory, which already includes default templates.
+The privacy manifest templates are stored in the [`Templates`](https://github.com/crasowas/app_privacy_manifest_fixer/tree/main/Templates) directory, with the default templates already included in the root directory.
 
 **How can you customize the privacy manifests for apps or SDKs? Simply use [custom templates](#custom-templates)!**
 
 ### Template Types
 
-Templates are categorized as follows:
+The templates are categorized as follows:
 
 - **AppTemplate.xcprivacy**: A privacy manifest template for the app.
 - **FrameworkTemplate.xcprivacy**: A generic privacy manifest template for frameworks.
-- **FrameworkName.xcprivacy**: A privacy manifest template for a specific framework, available only in the `UserTemplates` directory.
+- **FrameworkName.xcprivacy**: A privacy manifest template for a specific framework, available only in the `Templates/UserTemplates` directory.
 
 ### Template Priority
 
@@ -135,15 +163,15 @@ The default templates are located in the `Templates` root directory and currentl
 - `Templates/AppTemplate.xcprivacy`
 - `Templates/FrameworkTemplate.xcprivacy`
 
-These templates will be modified based on the API usage analysis results. Specifically, the `NSPrivacyAccessedAPIType` entries in the templates will be adjusted to generate a new privacy manifest for the app or framework's privacy compliance.
+These templates will be modified based on the API usage analysis results, especially the `NSPrivacyAccessedAPIType` entries, to generate new privacy manifests for fixes, ensuring compliance with App Store requirements.
 
-**If you need to make any adjustments to the privacy manifest templates, such as the following scenarios, please avoid modifying the default templates directly. Instead, use custom templates. If a custom template with the same name exists, it will take precedence over the default template.**
+**If adjustments to the privacy manifest template are needed, such as in the following scenarios, avoid directly modifying the default templates. Instead, use a custom template. If a custom template with the same name exists, it will take precedence over the default template for fixes.**
 
 - Generating a non-compliant privacy manifest due to inaccurate API usage analysis.
 - Modifying the reason declared in the template.
 - Adding declarations for collected data.
 
-The API categories and their associated reasons in `AppTemplate.xcprivacy` are listed below:
+The privacy access API categories and their associated declared reasons in `AppTemplate.xcprivacy` are listed below:
 
 | NSPrivacyAccessedAPIType                                                                                                                                            | NSPrivacyAccessedAPITypeReasons        |
 |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
@@ -153,7 +181,7 @@ The API categories and their associated reasons in `AppTemplate.xcprivacy` are l
 | [NSPrivacyAccessedAPICategoryActiveKeyboards](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Active-keyboard-APIs) | 54BD.1: Customize UI on-device         |
 | [NSPrivacyAccessedAPICategoryUserDefaults](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#User-defaults-APIs)      | CA92.1: Access info from same app      |
 
-The API categories and their associated reasons in `FrameworkTemplate.xcprivacy` are listed below:
+The privacy access API categories and their associated declared reasons in `FrameworkTemplate.xcprivacy` are listed below:
 
 | NSPrivacyAccessedAPIType                                                                                                                                            | NSPrivacyAccessedAPITypeReasons         |
 |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
@@ -165,7 +193,7 @@ The API categories and their associated reasons in `FrameworkTemplate.xcprivacy`
 
 ### Custom Templates
 
-To create custom templates, place them in the `UserTemplates` directory with the following structure:
+To create custom templates, place them in the `Templates/UserTemplates` directory with the following structure:
 
 - `Templates/UserTemplates/AppTemplate.xcprivacy`
 - `Templates/UserTemplates/FrameworkTemplate.xcprivacy`
@@ -175,11 +203,35 @@ Among these templates, only `FrameworkTemplate.xcprivacy` will be modified based
 
 **Important Notes:**
 
-- Specific framework templates must follow the naming convention `FrameworkName.xcprivacy`, where `FrameworkName` matches the framework's name. For example, the `Flutter` framework template should be named `Flutter.xcprivacy`.
-- The SDK name may not always match the framework name. To identify the correct framework name, check the application bundle after building your project.
+- The template for a specific framework must follow the naming convention `FrameworkName.xcprivacy`, where `FrameworkName` should match the name of the framework. For example, the template for `Flutter.framework` should be named `Flutter.xcprivacy`.
+- The name of an SDK may not exactly match the name of the framework. To determine the correct framework name, check the `Frameworks` directory in the application bundle after building the project.
 
-## Important Considerations
+## 📑 Privacy Access Report
 
-- Whenever possible, upgrade to the latest SDK version that supports privacy manifests to avoid unnecessary risks.
+By default, the tool automatically generates privacy access reports for both the original and fixed versions of the app during each project build, and stores the reports in the `app_privacy_manifest_fixer/Build` directory.
+
+If you need to manually generate a privacy access report for a specific app, run the following command:
+
+```shell
+sh Report/report.sh <app_path> <report_output_path>
+# <app_path>: Path to the app (e.g., /path/to/App.app)
+# <report_output_path>: Path to save the report file (e.g., /path/to/report.html)
+```
+
+**Note**: The report generated by the tool currently only includes the privacy access section (`NSPrivacyAccessedAPITypes`). To view the data collection section (`NSPrivacyCollectedDataTypes`), please use Xcode to generate the `PrivacyReport`.
+
+### Sample Report Screenshots
+
+| Original App Report (report-original.html)                                                     | Fixed App Report (report.html)                                                              |
+|------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| ![Original App Report](https://img.crasowas.dev/app_privacy_manifest_fixer/20241218230746.png) | ![Fixed App Report](https://img.crasowas.dev/app_privacy_manifest_fixer/20241218230822.png) |
+
+## 💡 Important Considerations
+
+- If the latest version of the SDK supports a privacy manifest, please upgrade as soon as possible to avoid unnecessary risks.
 - This tool is a temporary solution and should not replace proper SDK management practices.
-- Before submitting your app, ensure that the privacy manifests comply with the latest App Store requirements.
+- Before submitting your app for review, ensure that the privacy manifest fix complies with the latest App Store requirements.
+
+## 🙌 Contributing
+
+Contributions in any form are welcome, including code optimizations, bug fixes, documentation improvements, and more. Please follow the project's guidelines and maintain a consistent coding style. Thank you for your support!
