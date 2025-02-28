@@ -1,3 +1,6 @@
+## 1.3.11
+- Fix install issue by skipping `PBXAggregateTarget` ([#4](https://github.com/crasowas/app_privacy_manifest_fixer/issues/4)).
+
 ## 1.3.10
 - Fix app re-signing issue.
 - Enhance Build Phases script robustness.
