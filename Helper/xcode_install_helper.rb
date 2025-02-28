@@ -36,7 +36,13 @@ end
 
 # Process all targets in the project
 project.targets.each do |target|
-  # Check if the target is an application target
+  # Skip PBXAggregateTarget
+  if target.is_a?(Xcodeproj::Project::Object::PBXAggregateTarget)
+    puts "Skipping aggregate target: #{target.name}."
+    next
+  end
+
+  # Check if the target is a native application target
   if target.product_type == 'com.apple.product-type.application'
     puts "Processing target: #{target.name}..."
 
