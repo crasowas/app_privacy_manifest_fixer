@@ -32,12 +32,19 @@ shift $((OPTIND - 1))
 
 # Directory of the app generated after the build
 app_dir="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"
-frameworks_dir="$app_dir/Frameworks"
 
 # Check if the app exists
 if [ ! -d "$app_dir" ] || [[ "$app_dir" != *.app ]]; then
     echo "Unable to find the app: $app_dir"
     exit 1
+fi
+
+# Check if the app is iOS or macOS
+is_ios_app=true
+frameworks_dir="$app_dir/Frameworks"
+if [[ -d "$app_dir/Contents/MacOS" ]]; then
+    is_ios_app=false
+    frameworks_dir="$app_dir/Contents/Frameworks"
 fi
 
 # Absolute path of the script and the fixer root directory
@@ -176,6 +183,57 @@ function get_dependency_name() {
     echo "$dep_name"
 }
 
+# Get the executable name from the specified `Info.plist` file
+function get_plist_executable() {
+    local plist_file="$1"
+    
+    if [[ ! -f "$plist_file" ]]; then
+        echo ""
+        return
+    fi
+
+    /usr/libexec/PlistBuddy -c "Print CFBundleExecutable" "$plist_file" 2>/dev/null || echo ""
+}
+
+# Get the full path to the executable of the specified app or framework
+function get_executable_path() {
+    local dir_path="$1"
+    
+    local plist_path=""
+    local exec_name=""
+
+    if [[ "$dir_path" == *.app ]]; then
+        if [ "$is_ios_app" == true ]; then
+            plist_path="$dir_path/Info.plist"
+        else
+            plist_path="$dir_path/Contents/Info.plist"
+        fi
+
+        exec_name="$(get_plist_executable "$plist_path")"
+        
+        if [[ "$is_ios_app" == true ]]; then
+            echo "$dir_path/$exec_name"
+        else
+            echo "$dir_path/Contents/MacOS/$exec_name"
+        fi
+    elif [[ "$dir_path" == *.framework ]]; then
+        if [ "$is_ios_app" == true ]; then
+            plist_path="$dir_path/Info.plist"
+        else
+            local current_version="$(readlink "$dir_path/Versions/Current" || echo "A")"
+            plist_path="$dir_path/Versions/$current_version/Resources/Info.plist"
+        fi
+
+        exec_name="$(get_plist_executable "$plist_path")"
+        
+        if [[ "$is_ios_app" == true ]]; then
+            echo "$dir_path/$exec_name"
+        else
+            echo "$dir_path/Versions/$current_version/$exec_name"
+        fi
+    fi
+}
+
 # Analyze the specified binary file for API symbols and their categories
 function analyze_binary_file() {
     local file_path="$1"
@@ -219,9 +277,7 @@ function analyze_api_usage() {
     local dir_path="$1"
     local -a results=()
     
-    local dir_name="$(basename "$dir_path")"
-    local binary_name="${dir_name%.*}"
-    local binary_file="$dir_path/$binary_name"
+    local binary_file="$(get_executable_path "$dir_path")"
     
     if [ -f "$binary_file" ]; then
         results+=($(analyze_binary_file "$binary_file"))
@@ -348,13 +404,26 @@ function fix() {
     if [[ "$dir_path" == *.app ]]; then
         # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
-        privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+        if [ "$is_ios_app" == true ]; then
+            privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+        else
+            privacy_manifest_file="$dir_path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
+        fi
     else
         # Per the documentation, the privacy manifest should be placed at the root of the framework’s bundle
         # Some SDKs don’t follow the guideline, so we use a search-based approach for now
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-framework
         local privacy_manifest_files=($(search_privacy_manifest_files "$dir_path"))
         privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
+        
+        if [ -z "$privacy_manifest_file" ]; then
+            if [ "$is_ios_app" == true ]; then
+                privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+            else
+                local current_version="$(readlink "$path/Versions/Current" || echo "A")"
+                privacy_manifest_file="$dir_path/Versions/$current_version/Resources/$PRIVACY_MANIFEST_FILE_NAME"
+            fi
+        fi
     fi
     
     # Check if the privacy manifest file exists
