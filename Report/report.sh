@@ -7,12 +7,19 @@
 # https://opensource.org/licenses/MIT.
 
 app_dir="$1"
-frameworks_dir="$app_dir/Frameworks"
 
 # Check if the app exists
 if [ ! -d "$app_dir" ] || [[ "$app_dir" != *.app ]]; then
     echo "Unable to find the app: $app_dir"
     exit 1
+fi
+
+# Check if the app is iOS or macOS
+is_ios_app=true
+frameworks_dir="$app_dir/Frameworks"
+if [[ -d "$app_dir/Contents/MacOS" ]]; then
+    is_ios_app=false
+    frameworks_dir="$app_dir/Contents/Frameworks"
 fi
 
 report_output_file="$2"
@@ -142,7 +149,7 @@ function analyze_privacy_accessed_api() {
 }
 
 # Get the version from the specified `Info.plist` file
-get_plist_version() {
+function get_plist_version() {
     local plist_file="$1"
 
     if [ ! -f "$plist_file" ]; then
@@ -229,7 +236,11 @@ function generate_report_content() {
     if [[ "$dir_path" == *.app ]]; then
         # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
-        privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+        if [ "$is_ios_app" == true ]; then
+            privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+        else
+            privacy_manifest_file="$dir_path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
+        fi
     else
         # Per the documentation, the privacy manifest should be placed at the root of the framework’s bundle
         # Some SDKs don’t follow the guideline, so we use a search-based approach for now
@@ -239,7 +250,20 @@ function generate_report_content() {
     fi
     
     local name="$(basename "$dir_path")"
-    local version="$(get_plist_version "$dir_path/Info.plist")"
+    
+    local plist_file=""
+    if [ "$is_ios_app" == true ]; then
+        plist_file="$dir_path/Info.plist"
+    else
+        if [[ "$dir_path" == *.app ]]; then
+            plist_file="$dir_path/Contents/Info.plist"
+        else
+            local current_version="$(readlink "$path/Versions/Current" || echo "A")"
+            plist_file="$dir_path/Versions/$current_version/Resources/Info.plist"
+        fi
+    fi
+    
+    local version="$(get_plist_version "$plist_file")"
     local card="$(generate_html_header "$name" "$version")"
     
     if [ -f "$privacy_manifest_file" ]; then
