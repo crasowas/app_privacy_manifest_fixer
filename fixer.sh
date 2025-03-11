@@ -42,7 +42,7 @@ fi
 # Check if the app is iOS or macOS
 is_ios_app=true
 frameworks_dir="$app_dir/Frameworks"
-if [[ -d "$app_dir/Contents/MacOS" ]]; then
+if [ -d "$app_dir/Contents/MacOS" ]; then
     is_ios_app=false
     frameworks_dir="$app_dir/Contents/Frameworks"
 fi
@@ -183,55 +183,75 @@ function get_dependency_name() {
     echo "$dep_name"
 }
 
+# Get the path of the specified framework version
+function get_framework_path() {
+    local dir_path="$1"
+    local framework_version_path="$2"
+
+    if [ -z "$framework_version_path" ]; then
+        echo "$dir_path"
+    else
+        echo "$dir_path/$framework_version_path"
+    fi
+}
+
+# Get the path to the `Info.plist` file for the specified app or framework
+function get_plist_file() {
+    local dir_path="$1"
+    local framework_version_path="$2"
+    local plist_file=""
+    
+    if [[ "$dir_path" == *.app ]]; then
+        if [ "$is_ios_app" == true ]; then
+            plist_file="$dir_path/Info.plist"
+        else
+            plist_file="$dir_path/Contents/Info.plist"
+        fi
+    elif [[ "$dir_path" == *.framework ]]; then
+        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+        
+        if [ "$is_ios_app" == true ]; then
+            plist_file="$framework_path/Info.plist"
+        else
+            plist_file="$framework_path/Resources/Info.plist"
+        fi
+    fi
+    
+    echo "$plist_file"
+}
+
 # Get the executable name from the specified `Info.plist` file
 function get_plist_executable() {
     local plist_file="$1"
     
-    if [[ ! -f "$plist_file" ]]; then
+    if [ ! -f "$plist_file" ]; then
         echo ""
-        return
+    else
+        /usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$plist_file" 2>/dev/null || echo ""
     fi
-
-    /usr/libexec/PlistBuddy -c "Print CFBundleExecutable" "$plist_file" 2>/dev/null || echo ""
 }
 
-# Get the full path to the executable of the specified app or framework
+# Get the path to the executable for the specified app or framework
 function get_executable_path() {
     local dir_path="$1"
+    local framework_version_path="$2"
+    local exec_path=""
     
-    local plist_path=""
-    local exec_name=""
-
+    local plist_file="$(get_plist_file "$dir_path" "$framework_version_path")"
+    local exec_name="$(get_plist_executable "$plist_file")"
+    
     if [[ "$dir_path" == *.app ]]; then
         if [ "$is_ios_app" == true ]; then
-            plist_path="$dir_path/Info.plist"
+            exec_path="$dir_path/$exec_name"
         else
-            plist_path="$dir_path/Contents/Info.plist"
-        fi
-
-        exec_name="$(get_plist_executable "$plist_path")"
-        
-        if [[ "$is_ios_app" == true ]]; then
-            echo "$dir_path/$exec_name"
-        else
-            echo "$dir_path/Contents/MacOS/$exec_name"
+            exec_path="$dir_path/Contents/MacOS/$exec_name"
         fi
     elif [[ "$dir_path" == *.framework ]]; then
-        if [ "$is_ios_app" == true ]; then
-            plist_path="$dir_path/Info.plist"
-        else
-            local current_version="$(readlink "$dir_path/Versions/Current" || echo "A")"
-            plist_path="$dir_path/Versions/$current_version/Resources/Info.plist"
-        fi
-
-        exec_name="$(get_plist_executable "$plist_path")"
-        
-        if [[ "$is_ios_app" == true ]]; then
-            echo "$dir_path/$exec_name"
-        else
-            echo "$dir_path/Versions/$current_version/$exec_name"
-        fi
+        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+        exec_path="$framework_path/$exec_name"
     fi
+    
+    echo "$exec_path"
 }
 
 # Analyze the specified binary file for API symbols and their categories
@@ -275,9 +295,10 @@ function analyze_binary_file() {
 # Analyze API usage in a binary file
 function analyze_api_usage() {
     local dir_path="$1"
+    local framework_version_path="$2"
     local -a results=()
     
-    local binary_file="$(get_executable_path "$dir_path")"
+    local binary_file="$(get_executable_path "$dir_path" "$framework_version_path")"
     
     if [ -f "$binary_file" ]; then
         results+=($(analyze_binary_file "$binary_file"))
@@ -333,6 +354,7 @@ function get_categories() {
 # Get template file for the specified app or framework
 function get_template_file() {
     local dir_path="$1"
+    local framework_version_path="$2"
     local template_file=""
     
     if [[ "$dir_path" == *.app ]]; then
@@ -340,6 +362,10 @@ function get_template_file() {
     else
         # Give priority to the user-defined framework privacy manifest template
         local dep_name="$(get_dependency_name "$dir_path")"
+        if [ -n "$framework_version_path" ]; then
+            dep_name="$dep_name.$(basename "$framework_version_path")"
+        fi
+        
         local dep_template_file="$user_templates_dir/${dep_name}.xcprivacy"
         if [ -f "$dep_template_file" ]; then
             template_file="$dep_template_file"
@@ -349,21 +375,6 @@ function get_template_file() {
     fi
     
     echo "$template_file"
-}
-
-# Copy the template file to the privacy manifest location, overwriting if it exists
-# If the privacy manifest file doesn't exist, copy it to the root directory of the app or framework by default
-function copy_template_file() {
-    local dir_path="$1"
-    local template_file="$2"
-    local privacy_manifest_file="$3"
-    
-    if [ -z "$privacy_manifest_file" ]; then
-        privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
-    fi
-    
-    cp "$template_file" "$privacy_manifest_file"
-    echo "$privacy_manifest_file"
 }
 
 # Check if the specified template file should be modified
@@ -398,11 +409,11 @@ function resign() {
 function fix() {
     local dir_path="$1"
     local force_resign="$2"
-    
+    local framework_version_path="$3"
     local privacy_manifest_file=""
     
     if [[ "$dir_path" == *.app ]]; then
-        # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle
+        # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle for iOS, while for macOS, it should be located in `Contents/Resources/` within the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
         if [ "$is_ios_app" == true ]; then
             privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
@@ -410,18 +421,18 @@ function fix() {
             privacy_manifest_file="$dir_path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
         fi
     else
-        # Per the documentation, the privacy manifest should be placed at the root of the framework’s bundle
+        # Per the documentation, the privacy manifest should be placed at the root of the iOS framework, while for a macOS framework with multiple versions, it should be located in the `Resources` directory within the corresponding version
         # Some SDKs don’t follow the guideline, so we use a search-based approach for now
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-framework
-        local privacy_manifest_files=($(search_privacy_manifest_files "$dir_path"))
+        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+        local privacy_manifest_files=($(search_privacy_manifest_files "$framework_path"))
         privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
         
         if [ -z "$privacy_manifest_file" ]; then
             if [ "$is_ios_app" == true ]; then
-                privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+                privacy_manifest_file="$framework_path/$PRIVACY_MANIFEST_FILE_NAME"
             else
-                local current_version="$(readlink "$path/Versions/Current" || echo "A")"
-                privacy_manifest_file="$dir_path/Versions/$current_version/Resources/$PRIVACY_MANIFEST_FILE_NAME"
+                privacy_manifest_file="$framework_path/Resources/$PRIVACY_MANIFEST_FILE_NAME"
             fi
         fi
     fi
@@ -441,13 +452,15 @@ function fix() {
         echo "⚠️  Missing privacy manifest file!"
     fi
     
-    local results=($(analyze_api_usage "$dir_path"))
+    local results=($(analyze_api_usage "$dir_path" "$framework_version_path"))
     echo "API usage analysis result(s): ${#results[@]}"
     print_array "${results[@]}"
     
-    local template_file="$(get_template_file "$dir_path")"
-    template_usage_records+=("$(basename "$dir_path")$DELIMITER$template_file")
-    privacy_manifest_file="$(copy_template_file "$dir_path" "$template_file" "$privacy_manifest_file")"
+    local template_file="$(get_template_file "$dir_path" "$framework_version_path")"
+    template_usage_records+=("$(basename "$dir_path")$framework_version_path$DELIMITER$template_file")
+    
+    # Copy the template file to the privacy manifest location, overwriting if it exists
+    cp "$template_file" "$privacy_manifest_file"
     
     if is_template_modifiable "$template_file"; then
         local categories=($(get_categories "${results[@]}"))
@@ -480,14 +493,14 @@ function fix() {
             local remove_node="$(xmllint --xpath "//dict[string='$category']" "$privacy_manifest_file" 2>/dev/null || true)"
             
             # If the node is found, escape special characters and append it to the sed pattern
-            if [[ -n "$remove_node" ]]; then
+            if [ -n "$remove_node" ]; then
                 local escaped_node=$(echo "$remove_node" | sed 's/[\/&]/\\&/g')
                 sed_pattern+="s/$escaped_node//g;"
             fi
         done
 
         # Apply the combined sed pattern to the file if it's not empty
-        if [[ -n "$sed_pattern" ]]; then
+        if [ -n "$sed_pattern" ]; then
             sed -i "" "$sed_pattern" "$privacy_manifest_file"
         fi
 
@@ -510,9 +523,20 @@ function fix_frameworks() {
     for path in "$frameworks_dir"/*; do
         if [ -d "$path" ]; then
             local dep_name="$(get_dependency_name "$path")"
-            echo "Analyzing $dep_name ..."
-            fix "$path" false
-            echo ""
+            local framework_versions_dir="$path/Versions"
+            
+            if [ -d "$framework_versions_dir" ]; then
+                for framework_version in $(ls -1 "$framework_versions_dir" | grep -vE '^Current$'); do
+                    local framework_version_path="Versions/$framework_version"
+                    echo "Analyzing $dep_name ($framework_version_path) ..."
+                    fix "$path" false "$framework_version_path"
+                    echo ""
+                done
+            else
+                echo "Analyzing $dep_name ..."
+                fix "$path" false
+                echo ""
+            fi
         fi
     done
 }
