@@ -1,11 +1,12 @@
 # App Privacy Manifest Fixer
 
 [![Latest Version](https://img.shields.io/github/v/release/crasowas/app_privacy_manifest_fixer?logo=github)](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest)
+![Supported Platforms](https://img.shields.io/badge/Supported%20Platforms-iOS%20%7C%20macOS-brightgreen)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 **English | [简体中文](./README.zh-CN.md)**
 
-This tool is an automation solution based on Shell scripts, designed to analyze and fix the privacy manifest of iOS apps to ensure compliance with App Store requirements. It leverages the [App Store Privacy Manifest Analyzer](https://github.com/crasowas/app_store_required_privacy_manifest_analyser) to analyze API usage within the app and its dependencies, and generate or fix the `PrivacyInfo.xcprivacy` file.
+This tool is an automation solution based on Shell scripts, designed to analyze and fix the privacy manifest of iOS/macOS apps to ensure compliance with App Store requirements. It leverages the [App Store Privacy Manifest Analyzer](https://github.com/crasowas/app_store_required_privacy_manifest_analyser) to analyze API usage within the app and its dependencies, and generate or fix the `PrivacyInfo.xcprivacy` file.
 
 ## ✨ Features
 
@@ -24,7 +25,7 @@ This tool is an automation solution based on Shell scripts, designed to analyze 
 2. Extract the downloaded file:
    - The extracted directory is usually named `app_privacy_manifest_fixer-xxx` (where `xxx` is the version number).
    - It is recommended to rename it to `app_privacy_manifest_fixer` or use the full directory name in subsequent paths.
-   - **It is advised to move the directory to your iOS project to avoid path-related issues on different devices, and to easily customize the privacy manifest template for each project**.
+   - **It is advised to move the directory to your iOS/macOS project to avoid path-related issues on different devices, and to easily customize the privacy manifest template for each project**.
 
 ### ⚡ Automatic Installation (Recommended)
 
@@ -40,7 +41,7 @@ This tool is an automation solution based on Shell scripts, designed to analyze 
    sh install.sh <project_path>
    ```
 
-   - For Flutter projects, `project_path` should be the path to the `ios` directory within the Flutter project.
+   - For Flutter projects, `project_path` should be the path to the `ios/macos` directory within the Flutter project.
    - If the installation command is run again, the tool will first remove any existing installation (if present). To modify command-line options, simply rerun the installation command without the need to uninstall first.
 
 ### Manual Installation
@@ -49,7 +50,7 @@ If you prefer not to use the installation script, you can manually add the `Fix 
 
 #### 1. Add the Script in Xcode
 
-- Open your iOS project in Xcode, go to the **TARGETS** tab, and select your app target.
+- Open your iOS/macOS project in Xcode, go to the **TARGETS** tab, and select your app target.
 - Navigate to **Build Phases**, click the **+** button, and select **New Run Script Phase**.
 - Rename the newly created **Run Script** to `Fix Privacy Manifest`.
 - In the **Shell** script box, add the following code:
@@ -114,7 +115,7 @@ Below is a screenshot of the log output from the tool during the project build (
 
   Enabling the `--install-builds-only` option makes the tool run only during installation builds (such as the **Archive** operation), optimizing build performance for daily development. If you manually installed, this option is ineffective, and you need to manually check the **For install builds only** option.
 
-  **Note**: If the iOS project is built in a development environment (where the generated app contains `*.debug.dylib` files), the tool's API usage analysis results may be inaccurate.
+  **Note**: If the iOS/macOS project is built in a development environment (where the generated app contains `*.debug.dylib` files), the tool's API usage analysis results may be inaccurate.
 
 ### Upgrade the Tool
 
@@ -141,7 +142,6 @@ The privacy manifest templates are stored in the [`Templates`](https://github.co
 ### Template Types
 
 The templates are categorized as follows:
-
 - **AppTemplate.xcprivacy**: A privacy manifest template for the app.
 - **FrameworkTemplate.xcprivacy**: A generic privacy manifest template for frameworks.
 - **FrameworkName.xcprivacy**: A privacy manifest template for a specific framework, available only in the `Templates/UserTemplates` directory.
@@ -149,24 +149,20 @@ The templates are categorized as follows:
 ### Template Priority
 
 For an app, the priority of privacy manifest templates is as follows:
-
 - `Templates/UserTemplates/AppTemplate.xcprivacy` > `Templates/AppTemplate.xcprivacy`
 
 For a specific framework, the priority of privacy manifest templates is as follows:
-
 - `Templates/UserTemplates/FrameworkName.xcprivacy` > `Templates/UserTemplates/FrameworkTemplate.xcprivacy` > `Templates/FrameworkTemplate.xcprivacy`
 
 ### Default Templates
 
 The default templates are located in the `Templates` root directory and currently include the following templates:
-
 - `Templates/AppTemplate.xcprivacy`
 - `Templates/FrameworkTemplate.xcprivacy`
 
 These templates will be modified based on the API usage analysis results, especially the `NSPrivacyAccessedAPIType` entries, to generate new privacy manifests for fixes, ensuring compliance with App Store requirements.
 
 **If adjustments to the privacy manifest template are needed, such as in the following scenarios, avoid directly modifying the default templates. Instead, use a custom template. If a custom template with the same name exists, it will take precedence over the default template for fixes.**
-
 - Generating a non-compliant privacy manifest due to inaccurate API usage analysis.
 - Modifying the reason declared in the template.
 - Adding declarations for collected data.
@@ -194,7 +190,6 @@ The privacy access API categories and their associated declared reasons in `Fram
 ### Custom Templates
 
 To create custom templates, place them in the `Templates/UserTemplates` directory with the following structure:
-
 - `Templates/UserTemplates/AppTemplate.xcprivacy`
 - `Templates/UserTemplates/FrameworkTemplate.xcprivacy`
 - `Templates/UserTemplates/FrameworkName.xcprivacy`
@@ -202,8 +197,8 @@ To create custom templates, place them in the `Templates/UserTemplates` director
 Among these templates, only `FrameworkTemplate.xcprivacy` will be modified based on the API usage analysis results to adjust the `NSPrivacyAccessedAPIType` entries, thereby generating a new privacy manifest for framework fixes. The other templates will remain unchanged and will be directly used for fixes.
 
 **Important Notes:**
-
 - The template for a specific framework must follow the naming convention `FrameworkName.xcprivacy`, where `FrameworkName` should match the name of the framework. For example, the template for `Flutter.framework` should be named `Flutter.xcprivacy`.
+- For macOS frameworks, the naming convention should be `FrameworkName.Version.xcprivacy`, where the version name is added to distinguish different versions. For a single version macOS framework, the `Version` is typically `A`.
 - The name of an SDK may not exactly match the name of the framework. To determine the correct framework name, check the `Frameworks` directory in the application bundle after building the project.
 
 ## 📑 Privacy Access Report

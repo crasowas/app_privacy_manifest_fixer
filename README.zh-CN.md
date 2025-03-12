@@ -1,11 +1,12 @@
 # App Privacy Manifest Fixer
 
 [![Latest Version](https://img.shields.io/github/v/release/crasowas/app_privacy_manifest_fixer?logo=github)](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest)
+![Supported Platforms](https://img.shields.io/badge/Supported%20Platforms-iOS%20%7C%20macOS-brightgreen)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 **[English](./README.md) | 简体中文**
 
-本工具是一个基于 Shell 脚本的自动化解决方案，旨在分析和修复 iOS App 的隐私清单，确保 App 符合 App Store 的要求。它利用 [App Store Privacy Manifest Analyzer](https://github.com/crasowas/app_store_required_privacy_manifest_analyser) 对 App 及其依赖项进行 API 使用分析，并生成或修复`PrivacyInfo.xcprivacy`文件。
+本工具是一个基于 Shell 脚本的自动化解决方案，旨在分析和修复 iOS/macOS App 的隐私清单，确保 App 符合 App Store 的要求。它利用 [App Store Privacy Manifest Analyzer](https://github.com/crasowas/app_store_required_privacy_manifest_analyser) 对 App 及其依赖项进行 API 使用分析，并生成或修复`PrivacyInfo.xcprivacy`文件。
 
 ## ✨ 功能特点
 
@@ -24,7 +25,7 @@
 2. 解压下载的文件：
    - 解压后的目录通常为`app_privacy_manifest_fixer-xxx`（其中`xxx`是版本号）。
    - 建议重命名为`app_privacy_manifest_fixer`，或在后续路径中使用完整目录名。
-   - **建议将该目录移动至 iOS 项目中，以避免因路径问题在不同设备上运行时出现错误，同时便于为每个项目单独自定义隐私清单模板**。
+   - **建议将该目录移动至 iOS/macOS 项目中，以避免因路径问题在不同设备上运行时出现错误，同时便于为每个项目单独自定义隐私清单模板**。
 
 ### ⚡ 自动安装（推荐）
 
@@ -40,7 +41,7 @@
    sh install.sh <project_path>
    ```  
    
-   - 如果是 Flutter 项目，`project_path`应为 Flutter 项目中的`ios`目录路径。
+   - 如果是 Flutter 项目，`project_path`应为 Flutter 项目中的`ios/macos`目录路径。
    - 重复运行安装命令时，工具会先移除现有安装（如果有）。若需修改命令行选项，只需重新运行安装命令，无需先卸载。
 
 ### 手动安装
@@ -49,7 +50,7 @@
 
 #### 1. 在 Xcode 中添加脚本
 
-- 用 Xcode 打开你的 iOS 项目，进入 **TARGETS** 选项卡，选择你的 App 目标。
+- 用 Xcode 打开你的 iOS/macOS 项目，进入 **TARGETS** 选项卡，选择你的 App 目标。
 - 进入 **Build Phases**，点击 **+** 按钮，选择 **New Run Script Phase**。
 - 将新建的 **Run Script** 重命名为`Fix Privacy Manifest`。
 - 在 **Shell** 脚本框中添加以下代码：
@@ -114,7 +115,7 @@
 
   启用`--install-builds-only`选项后，工具仅在执行安装构建（如 **Archive** 操作）时运行，以优化日常开发时的构建性能。如果你是手动安装的，该命令行选项无效，需要手动勾选 **For install builds only** 选项。
 
-  **注意**：如果 iOS 项目在开发环境构建（生成的 App 包含`*.debug.dylib`文件），工具的 API 使用分析结果可能不准确。
+  **注意**：如果 iOS/macOS 项目在开发环境构建（生成的 App 包含`*.debug.dylib`文件），工具的 API 使用分析结果可能不准确。
 
 ### 升级工具
 
@@ -141,7 +142,6 @@ sh uninstall.sh <project_path>
 ### 模板类型
 
 模板分为以下几类：
-
 - **AppTemplate.xcprivacy**：App 的隐私清单模板。
 - **FrameworkTemplate.xcprivacy**：通用的 Framework 隐私清单模板。
 - **FrameworkName.xcprivacy**：特定的 Framework 隐私清单模板，仅在`Templates/UserTemplates`目录有效。
@@ -149,24 +149,20 @@ sh uninstall.sh <project_path>
 ### 模板优先级
 
 对于 App，隐私清单模板的优先级如下：
-
 - `Templates/UserTemplates/AppTemplate.xcprivacy` > `Templates/AppTemplate.xcprivacy`
 
 对于特定的 Framework，隐私清单模板的优先级如下：
-
 - `Templates/UserTemplates/FrameworkName.xcprivacy` > `Templates/UserTemplates/FrameworkTemplate.xcprivacy` > `Templates/FrameworkTemplate.xcprivacy`
 
 ### 默认模板
 
 默认模板位于`Templates`根目录，目前包括以下模板：
-
 - `Templates/AppTemplate.xcprivacy`
 - `Templates/FrameworkTemplate.xcprivacy`
 
 这些模板将根据 API 使用分析结果进行修改，特别是`NSPrivacyAccessedAPIType`条目将被调整，以生成新的隐私清单用于修复，确保符合 App Store 要求。
 
 **如果需要调整隐私清单模板，例如以下场景，请避免直接修改默认模板，而是使用自定义模板。如果存在相同名称的自定义模板，它将优先于默认模板用于修复。**
-
 - 由于 API 使用分析结果不准确，生成了不合规的隐私清单。
 - 需要修改模板中声明的理由。
 - 需要声明收集的数据。
@@ -194,7 +190,6 @@ sh uninstall.sh <project_path>
 ### 自定义模板
 
 要创建自定义模板，请将其放在`Templates/UserTemplates`目录，结构如下：
-
 - `Templates/UserTemplates/AppTemplate.xcprivacy`
 - `Templates/UserTemplates/FrameworkTemplate.xcprivacy`
 - `Templates/UserTemplates/FrameworkName.xcprivacy`
@@ -202,8 +197,8 @@ sh uninstall.sh <project_path>
 在这些模板中，只有`FrameworkTemplate.xcprivacy`会根据 API 使用分析结果对`NSPrivacyAccessedAPIType`条目进行调整，以生成新的隐私清单用于 Framework 修复。其他模板保持不变，将直接用于修复。
 
 **重要说明：**
-
 - 特定的 Framework 模板必须遵循命名规范`FrameworkName.xcprivacy`，其中`FrameworkName`需与 Framework 的名称匹配。例如`Flutter.framework`的模板应命名为`Flutter.xcprivacy`。
+- 对于 macOS Framework，应遵循命名规范`FrameworkName.Version.xcprivacy`，额外增加版本名称用于区分不同的版本。对于单一版本的 macOS Framework，`Version`通常为`A`。
 - SDK 的名称可能与 Framework 的名称不完全一致。要确定正确的 Framework 名称，请在构建项目后检查 App 包中的`Frameworks`目录。
 
 ## 📑 隐私访问报告

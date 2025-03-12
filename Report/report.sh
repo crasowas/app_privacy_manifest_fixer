@@ -7,12 +7,19 @@
 # https://opensource.org/licenses/MIT.
 
 app_dir="$1"
-frameworks_dir="$app_dir/Frameworks"
 
 # Check if the app exists
 if [ ! -d "$app_dir" ] || [[ "$app_dir" != *.app ]]; then
     echo "Unable to find the app: $app_dir"
     exit 1
+fi
+
+# Check if the app is iOS or macOS
+is_ios_app=true
+frameworks_dir="$app_dir/Frameworks"
+if [ -d "$app_dir/Contents/MacOS" ]; then
+    is_ios_app=false
+    frameworks_dir="$app_dir/Contents/Frameworks"
 fi
 
 report_output_file="$2"
@@ -141,16 +148,52 @@ function analyze_privacy_accessed_api() {
     echo "${results[@]}"
 }
 
+# Get the path of the specified framework version
+function get_framework_path() {
+    local dir_path="$1"
+    local framework_version_path="$2"
+
+    if [ -z "$framework_version_path" ]; then
+        echo "$dir_path"
+    else
+        echo "$dir_path/$framework_version_path"
+    fi
+}
+
+# Get the path to the `Info.plist` file for the specified app or framework
+function get_plist_file() {
+    local dir_path="$1"
+    local framework_version_path="$2"
+    local plist_file=""
+    
+    if [[ "$dir_path" == *.app ]]; then
+        if [ "$is_ios_app" == true ]; then
+            plist_file="$dir_path/Info.plist"
+        else
+            plist_file="$dir_path/Contents/Info.plist"
+        fi
+    elif [[ "$dir_path" == *.framework ]]; then
+        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+        
+        if [ "$is_ios_app" == true ]; then
+            plist_file="$framework_path/Info.plist"
+        else
+            plist_file="$framework_path/Resources/Info.plist"
+        fi
+    fi
+    
+    echo "$plist_file"
+}
+
 # Get the version from the specified `Info.plist` file
-get_plist_version() {
+function get_plist_version() {
     local plist_file="$1"
 
     if [ ! -f "$plist_file" ]; then
         echo "$UNKNOWN_VERSION"
-        return
+    else
+        /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist_file" 2>/dev/null || echo "$UNKNOWN_VERSION"
     fi
-
-    /usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$plist_file" 2>/dev/null || echo "$UNKNOWN_VERSION"
 }
 
 # Add an HTML <div> element with the `card` class
@@ -223,29 +266,41 @@ function generate_html_tbody() {
 # Generate the report content for the specified directory
 function generate_report_content() {
     local dir_path="$1"
-    
+    local framework_version_path="$2"
     local privacy_manifest_file=""
     
     if [[ "$dir_path" == *.app ]]; then
-        # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle
+        # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle for iOS, while for macOS, it should be located in `Contents/Resources/` within the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
-        privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+        if [ "$is_ios_app" == true ]; then
+            privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+        else
+            privacy_manifest_file="$dir_path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
+        fi
     else
-        # Per the documentation, the privacy manifest should be placed at the root of the framework’s bundle
+        # Per the documentation, the privacy manifest should be placed at the root of the iOS framework, while for a macOS framework with multiple versions, it should be located in the `Resources` directory within the corresponding version
         # Some SDKs don’t follow the guideline, so we use a search-based approach for now
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-framework
-        local privacy_manifest_files=($(search_privacy_manifest_files "$dir_path"))
+        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+        local privacy_manifest_files=($(search_privacy_manifest_files "$framework_path"))
         privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
     fi
     
+    local plist_file="$(get_plist_file "$dir_path" "$framework_version_path")"
+    local version="$(get_plist_version "$plist_file")"
+    
     local name="$(basename "$dir_path")"
-    local version="$(get_plist_version "$dir_path/Info.plist")"
-    local card="$(generate_html_header "$name" "$version")"
+    local title="$name"
+    if [ -n "$framework_version_path" ]; then
+        title="$name ($framework_version_path)"
+    fi
+    
+    local card="$(generate_html_header "$title" "$version")"
     
     if [ -f "$privacy_manifest_file" ]; then
         card="$card$(generate_html_anchor "$PRIVACY_MANIFEST_FILE_NAME" "$privacy_manifest_file" false)"
         
-        local used_template_file="$(get_used_template_file "$name")"
+        local used_template_file="$(get_used_template_file "$name$framework_version_path")"
         
         if [ -f "$used_template_file" ]; then
             card="$card$(generate_html_anchor "Template Used: $(basename "$used_template_file")" "$used_template_file" false)"
@@ -280,7 +335,16 @@ function generate_frameworks_report_content() {
     
     for path in "$frameworks_dir"/*; do
         if [ -d "$path" ]; then
-            generate_report_content "$path"
+            local framework_versions_dir="$path/Versions"
+            
+            if [ -d "$framework_versions_dir" ]; then
+                for framework_version in $(ls -1 "$framework_versions_dir" | grep -vE '^Current$'); do
+                    local framework_version_path="Versions/$framework_version"
+                    generate_report_content "$path" "$framework_version_path"
+                done
+            else
+                generate_report_content "$path"
+            fi
         fi
     done
 }
