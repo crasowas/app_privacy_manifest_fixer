@@ -1,3 +1,6 @@
+## 1.4.0
+- Support for macOS app ([#9](https://github.com/crasowas/app_privacy_manifest_fixer/issues/9)).
+
 ## 1.3.11
 - Fix install issue by skipping `PBXAggregateTarget` ([#4](https://github.com/crasowas/app_privacy_manifest_fixer/issues/4)).
 
