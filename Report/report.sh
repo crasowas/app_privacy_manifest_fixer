@@ -6,106 +6,53 @@
 # that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-app_dir="$1"
+set -e
+
+# Absolute path of the script and the tool's root directory
+script_path="$(realpath "$0")"
+tool_root_path="$(dirname "$(dirname "$script_path")")"
+
+# Load common constants and utils
+source "$tool_root_path/Common/constants.sh"
+source "$tool_root_path/Common/utils.sh"
+
+# Path to the app
+app_path="$1"
 
 # Check if the app exists
-if [ ! -d "$app_dir" ] || [[ "$app_dir" != *.app ]]; then
-    echo "Unable to find the app: $app_dir"
+if [ ! -d "$app_path" ] || [[ "$app_path" != *.app ]]; then
+    echo "Unable to find the app: $app_path"
     exit 1
 fi
 
 # Check if the app is iOS or macOS
 is_ios_app=true
-frameworks_dir="$app_dir/Frameworks"
-if [ -d "$app_dir/Contents/MacOS" ]; then
+frameworks_dir="$app_path/Frameworks"
+if [ -d "$app_path/Contents/MacOS" ]; then
     is_ios_app=false
-    frameworks_dir="$app_dir/Contents/Frameworks"
+    frameworks_dir="$app_path/Contents/Frameworks"
 fi
 
 report_output_file="$2"
 # Additional arguments as template usage records
 template_usage_records=("${@:2}")
 
-# Absolute path of the script and the report root directory
-script_path="$(realpath "$0")"
-report_root_dir="$(dirname "$script_path")"
-
 # Copy report template to output file
-report_template_file="$report_root_dir/report-template.html"
+report_template_file="$tool_root_path/Report/report-template.html"
 if ! rsync -a "$report_template_file" "$report_output_file"; then
-    echo "Error: Failed to copy the report template to $report_output_file"
+    echo "Failed to copy the report template to $report_output_file"
     exit 1
 fi
 
-# Read the current version from the VERSION file
-version_file="$report_root_dir/../VERSION"
-version="N/A"
-if [ -f "$version_file" ]; then
-    version=$(cat "$version_file")
+# Read the current tool's version from the VERSION file
+tool_version_file="$tool_root_path/VERSION"
+tool_version="N/A"
+if [ -f "$tool_version_file" ]; then
+    tool_version="$(cat "$tool_version_file")"
 fi
 
 # Initialize report content
 report_content=""
-
-# File name of the privacy manifest
-readonly PRIVACY_MANIFEST_FILE_NAME="PrivacyInfo.xcprivacy"
-
-# Universal delimiter
-readonly DELIMITER=":"
-
-# Space escape symbol for handling space in path
-readonly SPACE_ESCAPE="\u0020"
-
-# Default value when the version cannot be retrieved
-readonly UNKNOWN_VERSION="unknown"
-
-# Split a string into substrings using a specified delimiter
-function split_string_by_delimiter() {
-    local string="$1"
-    local -a substrings=()
-
-    IFS="$DELIMITER" read -ra substrings <<< "$string"
-
-    echo "${substrings[@]}"
-}
-
-# Encode a path string by replacing space with an escape character
-function encode_path() {
-    echo "$1" | sed "s/ /$SPACE_ESCAPE/g"
-}
-
-# Decode a path string by replacing encoded character with space
-function decode_path() {
-    echo "$1" | sed "s/$SPACE_ESCAPE/ /g"
-}
-
-# Search for privacy manifest files in a directory
-function search_privacy_manifest_files() {
-    local dir_path="$1"
-    local -a privacy_manifest_files=()
-
-    # Create a temporary file to store search results
-    local temp_file="$(mktemp)"
-
-    # Ensure the temporary file is deleted on script exit
-    trap "rm -f $temp_file" EXIT
-
-    # Find privacy manifest files within the specified directory and store the results in the temporary file
-    find "$dir_path" -type f -name "$PRIVACY_MANIFEST_FILE_NAME" -print0 2>/dev/null > "$temp_file"
-
-    while IFS= read -r -d '' file_path; do
-        privacy_manifest_files+=($(encode_path "$file_path"))
-    done < "$temp_file"
-
-    echo "${privacy_manifest_files[@]}"
-}
-
-function get_privacy_manifest_file() {
-    # If there are multiple privacy manifest files, return the one with the shortest path
-    local privacy_manifest_file="$(printf "%s\n" "$@" | awk '{print length, $0}' | sort -n | head -n1 | cut -d ' ' -f2-)"
-    
-    echo "$(decode_path "$privacy_manifest_file")"
-}
 
 # Get the template file used for fixing based on the app or framework name
 function get_used_template_file() {
@@ -148,32 +95,20 @@ function analyze_privacy_accessed_api() {
     echo "${results[@]}"
 }
 
-# Get the path of the specified framework version
-function get_framework_path() {
-    local dir_path="$1"
-    local framework_version_path="$2"
-
-    if [ -z "$framework_version_path" ]; then
-        echo "$dir_path"
-    else
-        echo "$dir_path/$framework_version_path"
-    fi
-}
-
 # Get the path to the `Info.plist` file for the specified app or framework
 function get_plist_file() {
-    local dir_path="$1"
-    local framework_version_path="$2"
+    local path="$1"
+    local version_path="$2"
     local plist_file=""
     
-    if [[ "$dir_path" == *.app ]]; then
+    if [[ "$path" == *.app ]]; then
         if [ "$is_ios_app" == true ]; then
-            plist_file="$dir_path/Info.plist"
+            plist_file="$path/Info.plist"
         else
-            plist_file="$dir_path/Contents/Info.plist"
+            plist_file="$path/Contents/Info.plist"
         fi
-    elif [[ "$dir_path" == *.framework ]]; then
-        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+    elif [[ "$path" == *.framework ]]; then
+        local framework_path="$(get_framework_path "$path" "$version_path")"
         
         if [ "$is_ios_app" == true ]; then
             plist_file="$framework_path/Info.plist"
@@ -183,17 +118,6 @@ function get_plist_file() {
     fi
     
     echo "$plist_file"
-}
-
-# Get the version from the specified `Info.plist` file
-function get_plist_version() {
-    local plist_file="$1"
-
-    if [ ! -f "$plist_file" ]; then
-        echo "$UNKNOWN_VERSION"
-    else
-        /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist_file" 2>/dev/null || echo "$UNKNOWN_VERSION"
-    fi
 }
 
 # Add an HTML <div> element with the `card` class
@@ -265,42 +189,41 @@ function generate_html_tbody() {
 
 # Generate the report content for the specified directory
 function generate_report_content() {
-    local dir_path="$1"
-    local framework_version_path="$2"
+    local path="$1"
+    local version_path="$2"
     local privacy_manifest_file=""
     
-    if [[ "$dir_path" == *.app ]]; then
+    if [[ "$path" == *.app ]]; then
         # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle for iOS, while for macOS, it should be located in `Contents/Resources/` within the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
         if [ "$is_ios_app" == true ]; then
-            privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+            privacy_manifest_file="$path/$PRIVACY_MANIFEST_FILE_NAME"
         else
-            privacy_manifest_file="$dir_path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
+            privacy_manifest_file="$path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
         fi
     else
         # Per the documentation, the privacy manifest should be placed at the root of the iOS framework, while for a macOS framework with multiple versions, it should be located in the `Resources` directory within the corresponding version
         # Some SDKs don’t follow the guideline, so we use a search-based approach for now
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-framework
-        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+        local framework_path="$(get_framework_path "$path" "$version_path")"
         local privacy_manifest_files=($(search_privacy_manifest_files "$framework_path"))
         privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
     fi
     
-    local plist_file="$(get_plist_file "$dir_path" "$framework_version_path")"
-    local version="$(get_plist_version "$plist_file")"
-    
-    local name="$(basename "$dir_path")"
+    local name="$(basename "$path")"
     local title="$name"
-    if [ -n "$framework_version_path" ]; then
-        title="$name ($framework_version_path)"
+    if [ -n "$version_path" ]; then
+        title="$name ($version_path)"
     fi
     
+    local plist_file="$(get_plist_file "$path" "$version_path")"
+    local version="$(get_plist_version "$plist_file")"
     local card="$(generate_html_header "$title" "$version")"
     
     if [ -f "$privacy_manifest_file" ]; then
         card="$card$(generate_html_anchor "$PRIVACY_MANIFEST_FILE_NAME" "$privacy_manifest_file" false)"
         
-        local used_template_file="$(get_used_template_file "$name$framework_version_path")"
+        local used_template_file="$(get_used_template_file "$name$version_path")"
         
         if [ -f "$used_template_file" ]; then
             card="$card$(generate_html_anchor "Template Used: $(basename "$used_template_file")" "$used_template_file" false)"
@@ -316,7 +239,7 @@ function generate_report_content() {
             card="$card$(generate_html_table "$thead" "$tbody")"
         fi
     else
-        card="$card$(generate_html_anchor "Missing Privacy Manifest" "$dir_path" true)"
+        card="$card$(generate_html_anchor "Missing Privacy Manifest" "$path" true)"
     fi
     
     add_html_card_container "$card"
@@ -324,7 +247,7 @@ function generate_report_content() {
 
 # Generate the report content for app
 function generate_app_report_content() {
-    generate_report_content "$app_dir"
+    generate_report_content "$app_path" ""
 }
 
 # Generate the report content for frameworks
@@ -335,15 +258,15 @@ function generate_frameworks_report_content() {
     
     for path in "$frameworks_dir"/*; do
         if [ -d "$path" ]; then
-            local framework_versions_dir="$path/Versions"
+            local versions_dir="$path/Versions"
             
-            if [ -d "$framework_versions_dir" ]; then
-                for framework_version in $(ls -1 "$framework_versions_dir" | grep -vE '^Current$'); do
-                    local framework_version_path="Versions/$framework_version"
-                    generate_report_content "$path" "$framework_version_path"
+            if [ -d "$versions_dir" ]; then
+                for version in $(ls -1 "$versions_dir" | grep -vE '^Current$'); do
+                    local version_path="Versions/$version"
+                    generate_report_content "$path" "$version_path"
                 done
             else
-                generate_report_content "$path"
+                generate_report_content "$path" ""
             fi
         fi
     done
@@ -351,9 +274,10 @@ function generate_frameworks_report_content() {
 
 # Generate the final report with all content
 function generate_final_report() {
-    # Replace placeholders in the template with the version and report content
-    sed -i "" -e "s|{{VERSION}}|$version|g" -e "s|{{REPORT_CONTENT}}|${report_content}|g" "$report_output_file"
-    echo "Privacy Access Report has been generated: $report_output_file."
+    # Replace placeholders in the template with the tool's version and report content
+    sed -i "" -e "s|{{TOOL_VERSION}}|$tool_version|g" -e "s|{{REPORT_CONTENT}}|${report_content}|g" "$report_output_file"
+    
+    echo "Privacy Access Report has been generated: $report_output_file"
 }
 
 generate_app_report_content

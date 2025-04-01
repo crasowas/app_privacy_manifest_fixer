@@ -6,9 +6,11 @@
 # that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-# Absolute path of the script and the fixer root directory
+set -e
+
+# Absolute path of the script and the tool's root directory
 script_path="$(realpath "$0")"
-fixer_root_dir="$(dirname "$script_path")"
+tool_root_path="$(dirname "$script_path")"
 
 # Repository details
 readonly REPO_OWNER="crasowas"
@@ -36,17 +38,18 @@ fi
 # Convert UTC time to local time
 published_time=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%SZ" "$published_time" +"%s" | xargs -I{} date -j -r {} +"%Y-%m-%d %H:%M:%S %z")
 
-# Read the current version from the VERSION file
-if [ ! -f "$fixer_root_dir/VERSION" ]; then
+# Read the current tool's version from the VERSION file
+tool_version_file="$tool_root_path/VERSION"
+if [ ! -f "$tool_version_file" ]; then
     echo "VERSION file not found."
     exit 1
 fi
 
-local_version="$(cat "$fixer_root_dir/VERSION")"
+local_version="$(cat "$tool_version_file")"
 
 # Skip upgrade if the current version is already the latest
 if [ "$local_version" == "$latest_version" ]; then
-    echo "Version $latest_version • $published_time."
+    echo "Version $latest_version • $published_time"
     echo "Already up-to-date."
     exit 0
 fi
@@ -71,16 +74,16 @@ fi
 echo "Extracting files..."
 tar -xzf "$temp_dir/$download_file_name" -C "$temp_dir"
 
-# Locate the extracted release directory
-extracted_release_dir=$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d -name "*$REPO_NAME*" | head -n 1)
+# Find the extracted release
+extracted_release_path=$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d -name "*$REPO_NAME*" | head -n 1)
 
-# Ensure the extracted release directory was found
-if [ -z "$extracted_release_dir" ]; then
-    echo "Could not find the extracted release directory for the latest version."
+# Verify that an extracted release was found
+if [ -z "$extracted_release_path" ]; then
+    echo "No extracted release found for the latest version."
     exit 1
 fi
 
-user_templates_dir="$fixer_root_dir/Templates/UserTemplates"
+user_templates_dir="$tool_root_path/Templates/UserTemplates"
 user_templates_backup_dir="$temp_dir/Templates/UserTemplates"
 
 # Backup the user templates directory if it exists
@@ -92,7 +95,7 @@ fi
 
 # Replace old version files with the new version files
 echo "Replacing old version files..."
-rsync -a --delete "$extracted_release_dir/" "$fixer_root_dir/"
+rsync -a --delete "$extracted_release_path/" "$tool_root_path/"
 
 # Restore the user templates from the backup
 if [ -d "$user_templates_backup_dir" ]; then
@@ -101,5 +104,5 @@ if [ -d "$user_templates_backup_dir" ]; then
 fi
 
 # Upgrade complete
-echo "Version $latest_version • $published_time."
+echo "Version $latest_version • $published_time"
 echo "Upgrade completed successfully!"

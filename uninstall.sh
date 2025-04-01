@@ -6,6 +6,8 @@
 # that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+set -e
+
 # Check if the project path is provided
 if [[ $# -eq 0 ]]; then
     echo "Usage: $0 <project_path>"
@@ -31,13 +33,14 @@ if ! gem list -i xcodeproj &>/dev/null; then
     gem install xcodeproj || { echo "Failed to install 'xcodeproj'."; exit 1; }
 fi
 
-script_path="$(realpath "$0")"
-fixer_root_dir="$(dirname "$script_path")"
-
 # Convert project path to an absolute path if it is relative
 if [[ ! "$project_path" = /* ]]; then
     project_path="$(realpath "$project_path")"
 fi
 
+# Absolute path of the script and the tool's root directory
+script_path="$(realpath "$0")"
+tool_root_path="$(dirname "$script_path")"
+
 # Execute the Ruby helper script
-ruby "$fixer_root_dir/Helper/xcode_uninstall_helper.rb" "$project_path"
+ruby "$tool_root_path/Helper/xcode_uninstall_helper.rb" "$project_path"

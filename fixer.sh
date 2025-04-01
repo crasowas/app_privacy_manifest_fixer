@@ -6,6 +6,16 @@
 # that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+set -e
+
+# Absolute path of the script and the tool's root directory
+script_path="$(realpath "$0")"
+tool_root_path="$(dirname "$script_path")"
+
+# Load common constants and utils
+source "$tool_root_path/Common/constants.sh"
+source "$tool_root_path/Common/utils.sh"
+
 # Force replace the existing privacy manifest when the `-f` option is enabled
 force=false
 
@@ -30,34 +40,26 @@ done
 
 shift $((OPTIND - 1))
 
-# Directory of the app generated after the build
-app_dir="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"
+# Path of the app produced by the build process
+app_path="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"
 
 # Check if the app exists
-if [ ! -d "$app_dir" ] || [[ "$app_dir" != *.app ]]; then
-    echo "Unable to find the app: $app_dir"
+if [ ! -d "$app_path" ] || [[ "$app_path" != *.app ]]; then
+    echo "Unable to find the app: $app_path"
     exit 1
 fi
 
 # Check if the app is iOS or macOS
 is_ios_app=true
-frameworks_dir="$app_dir/Frameworks"
-if [ -d "$app_dir/Contents/MacOS" ]; then
+frameworks_dir="$app_path/Frameworks"
+if [ -d "$app_path/Contents/MacOS" ]; then
     is_ios_app=false
-    frameworks_dir="$app_dir/Contents/Frameworks"
+    frameworks_dir="$app_path/Contents/Frameworks"
 fi
 
-# Absolute path of the script and the fixer root directory
-script_path="$(realpath "$0")"
-fixer_root_dir="$(dirname "$script_path")"
-
-# Default template paths
-templates_dir="$fixer_root_dir/Templates"
-user_templates_dir="$fixer_root_dir/Templates/UserTemplates"
-
-# Common privacy manifest template file names
-readonly APP_TEMPLATE_FILE_NAME="AppTemplate.xcprivacy"
-readonly FRAMEWORK_TEMPLATE_FILE_NAME="FrameworkTemplate.xcprivacy"
+# Default template directories
+templates_dir="$tool_root_path/Templates"
+user_templates_dir="$tool_root_path/Templates/UserTemplates"
 
 # Use user-defined app privacy manifest template if it exists, otherwise fallback to default
 app_template_file="$user_templates_dir/$APP_TEMPLATE_FILE_NAME"
@@ -74,12 +76,12 @@ fi
 # Disable build output in silent mode
 if [ "$silent" == false ]; then
     # Script used to generate the privacy access report
-    report_script="$fixer_root_dir/Report/report.sh"
+    report_script="$tool_root_path/Report/report.sh"
     # An array to record template usage for generating the privacy access report
     template_usage_records=()
     
     # Build output directory
-    build_dir="$fixer_root_dir/Build/${PRODUCT_NAME}-${CONFIGURATION}_${MARKETING_VERSION}_${CURRENT_PROJECT_VERSION}_$(date +%Y%m%d%H%M%S)"
+    build_dir="$tool_root_path/Build/${PRODUCT_NAME}-${CONFIGURATION}_${MARKETING_VERSION}_${CURRENT_PROJECT_VERSION}_$(date +%Y%m%d%H%M%S)"
     # Ensure the build directory exists
     mkdir -p "$build_dir"
 
@@ -87,128 +89,20 @@ if [ "$silent" == false ]; then
     exec > >(tee "$build_dir/fix.log") 2>&1
 fi
 
-# File name of the privacy manifest
-readonly PRIVACY_MANIFEST_FILE_NAME="PrivacyInfo.xcprivacy"
-
-# Universal delimiter
-readonly DELIMITER=":"
-
-# Space escape symbol for handling space in path
-readonly SPACE_ESCAPE="\u0020"
-
-# Categories of required reason APIs
-readonly API_CATEGORIES=(
-    "NSPrivacyAccessedAPICategoryFileTimestamp"
-    "NSPrivacyAccessedAPICategorySystemBootTime"
-    "NSPrivacyAccessedAPICategoryDiskSpace"
-    "NSPrivacyAccessedAPICategoryActiveKeyboards"
-    "NSPrivacyAccessedAPICategoryUserDefaults"
-)
-
-# Symbol of the required reason APIs and their categories
-#
-# See also:
-#   * https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api
-#   * https://github.com/Wooder/ios_17_required_reason_api_scanner/blob/main/required_reason_api_binary_scanner.sh
-readonly API_SYMBOLS=(
-    # NSPrivacyAccessedAPICategoryFileTimestamp
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}getattrlist"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}getattrlistbulk"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}fgetattrlist"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}stat"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}fstat"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}fstatat"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}lstat"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}getattrlistat"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}NSFileCreationDate"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}NSFileModificationDate"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}NSURLContentModificationDateKey"
-    "NSPrivacyAccessedAPICategoryFileTimestamp${DELIMITER}NSURLCreationDateKey"
-    # NSPrivacyAccessedAPICategorySystemBootTime
-    "NSPrivacyAccessedAPICategorySystemBootTime${DELIMITER}systemUptime"
-    "NSPrivacyAccessedAPICategorySystemBootTime${DELIMITER}mach_absolute_time"
-    # NSPrivacyAccessedAPICategoryDiskSpace
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}statfs"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}statvfs"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}fstatfs"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}fstatvfs"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}NSFileSystemFreeSize"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}NSFileSystemSize"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}NSURLVolumeAvailableCapacityKey"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}NSURLVolumeAvailableCapacityForImportantUsageKey"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}NSURLVolumeAvailableCapacityForOpportunisticUsageKey"
-    "NSPrivacyAccessedAPICategoryDiskSpace${DELIMITER}NSURLVolumeTotalCapacityKey"
-    # NSPrivacyAccessedAPICategoryActiveKeyboards
-    "NSPrivacyAccessedAPICategoryActiveKeyboards${DELIMITER}activeInputModes"
-    # NSPrivacyAccessedAPICategoryUserDefaults
-    "NSPrivacyAccessedAPICategoryUserDefaults${DELIMITER}NSUserDefaults"
-)
-
-# Print the elements of an array along with their indices
-function print_array() {
-    local -a array=("$@")
-    
-    for ((i=0; i<${#array[@]}; i++)); do
-        echo "[$i] $(decode_path "${array[i]}")"
-    done
-}
-
-# Split a string into substrings using a specified delimiter
-function split_string_by_delimiter() {
-    local string="$1"
-    local -a substrings=()
-
-    IFS="$DELIMITER" read -ra substrings <<< "$string"
-
-    echo "${substrings[@]}"
-}
-
-# Encode a path string by replacing space with an escape character
-function encode_path() {
-    echo "$1" | sed "s/ /$SPACE_ESCAPE/g"
-}
-
-# Decode a path string by replacing encoded character with space
-function decode_path() {
-    echo "$1" | sed "s/$SPACE_ESCAPE/ /g"
-}
-
-function get_dependency_name() {
-    local dep_path="$1"
-    local dir_name="$(basename "$dep_path")"
-
-    # Remove `.app`, `.framework`, and `.xcframework` suffixes
-    local dep_name="${dir_name%.*}"
-    
-    echo "$dep_name"
-}
-
-# Get the path of the specified framework version
-function get_framework_path() {
-    local dir_path="$1"
-    local framework_version_path="$2"
-
-    if [ -z "$framework_version_path" ]; then
-        echo "$dir_path"
-    else
-        echo "$dir_path/$framework_version_path"
-    fi
-}
-
 # Get the path to the `Info.plist` file for the specified app or framework
 function get_plist_file() {
-    local dir_path="$1"
-    local framework_version_path="$2"
+    local path="$1"
+    local version_path="$2"
     local plist_file=""
     
-    if [[ "$dir_path" == *.app ]]; then
+    if [[ "$path" == *.app ]]; then
         if [ "$is_ios_app" == true ]; then
-            plist_file="$dir_path/Info.plist"
+            plist_file="$path/Info.plist"
         else
-            plist_file="$dir_path/Contents/Info.plist"
+            plist_file="$path/Contents/Info.plist"
         fi
-    elif [[ "$dir_path" == *.framework ]]; then
-        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+    elif [[ "$path" == *.framework ]]; then
+        local framework_path="$(get_framework_path "$path" "$version_path")"
         
         if [ "$is_ios_app" == true ]; then
             plist_file="$framework_path/Info.plist"
@@ -220,48 +114,37 @@ function get_plist_file() {
     echo "$plist_file"
 }
 
-# Get the executable name from the specified `Info.plist` file
-function get_plist_executable() {
-    local plist_file="$1"
-    
-    if [ ! -f "$plist_file" ]; then
-        echo ""
-    else
-        /usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$plist_file" 2>/dev/null || echo ""
-    fi
-}
-
 # Get the path to the executable for the specified app or framework
 function get_executable_path() {
-    local dir_path="$1"
-    local framework_version_path="$2"
-    local exec_path=""
+    local path="$1"
+    local version_path="$2"
+    local executable_path=""
     
-    local plist_file="$(get_plist_file "$dir_path" "$framework_version_path")"
-    local exec_name="$(get_plist_executable "$plist_file")"
+    local plist_file="$(get_plist_file "$path" "$version_path")"
+    local executable_name="$(get_plist_executable "$plist_file")"
     
-    if [[ "$dir_path" == *.app ]]; then
+    if [[ "$path" == *.app ]]; then
         if [ "$is_ios_app" == true ]; then
-            exec_path="$dir_path/$exec_name"
+            executable_path="$path/$executable_name"
         else
-            exec_path="$dir_path/Contents/MacOS/$exec_name"
+            executable_path="$path/Contents/MacOS/$executable_name"
         fi
-    elif [[ "$dir_path" == *.framework ]]; then
-        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
-        exec_path="$framework_path/$exec_name"
+    elif [[ "$path" == *.framework ]]; then
+        local framework_path="$(get_framework_path "$path" "$version_path")"
+        executable_path="$framework_path/$executable_name"
     fi
     
-    echo "$exec_path"
+    echo "$executable_path"
 }
 
 # Analyze the specified binary file for API symbols and their categories
 function analyze_binary_file() {
-    local file_path="$1"
+    local path="$1"
     local -a results=()
 
     # Check if the API symbol exists in the binary file using `nm` and `strings`
-    local nm_output=$(nm "$file_path" 2>/dev/null | xcrun swift-demangle)
-    local strings_output=$(strings "$file_path")
+    local nm_output=$(nm "$path" 2>/dev/null | xcrun swift-demangle)
+    local strings_output=$(strings "$path")
     local combined_output="$nm_output"$'\n'"$strings_output"
 
     for api_symbol in "${API_SYMBOLS[@]}"; do
@@ -284,7 +167,7 @@ function analyze_binary_file() {
 
             # If no matching category found, add a new result
             if [[ $index -eq -1 ]]; then
-                results+=("$category$DELIMITER$api$DELIMITER$(encode_path "$file_path")")
+                results+=("$category$DELIMITER$api$DELIMITER$(encode_path "$path")")
             fi
         fi
     done
@@ -294,11 +177,11 @@ function analyze_binary_file() {
 
 # Analyze API usage in a binary file
 function analyze_api_usage() {
-    local dir_path="$1"
-    local framework_version_path="$2"
+    local path="$1"
+    local version_path="$2"
     local -a results=()
     
-    local binary_file="$(get_executable_path "$dir_path" "$framework_version_path")"
+    local binary_file="$(get_executable_path "$path" "$version_path")"
     
     if [ -f "$binary_file" ]; then
         results+=($(analyze_binary_file "$binary_file"))
@@ -307,33 +190,7 @@ function analyze_api_usage() {
     echo "${results[@]}"
 }
 
-# Search for privacy manifest files in a directory
-function search_privacy_manifest_files() {
-    local dir_path="$1"
-    local -a privacy_manifest_files=()
 
-    # Create a temporary file to store search results
-    local temp_file="$(mktemp)"
-
-    # Ensure the temporary file is deleted on script exit
-    trap "rm -f $temp_file" EXIT
-
-    # Find privacy manifest files within the specified directory and store the results in the temporary file
-    find "$dir_path" -type f -name "$PRIVACY_MANIFEST_FILE_NAME" -print0 2>/dev/null > "$temp_file"
-
-    while IFS= read -r -d '' file_path; do
-        privacy_manifest_files+=($(encode_path "$file_path"))
-    done < "$temp_file"
-
-    echo "${privacy_manifest_files[@]}"
-}
-
-function get_privacy_manifest_file() {
-    # If there are multiple privacy manifest files, return the one with the shortest path
-    local privacy_manifest_file="$(printf "%s\n" "$@" | awk '{print length, $0}' | sort -n | head -n1 | cut -d ' ' -f2-)"
-    
-    echo "$(decode_path "$privacy_manifest_file")"
-}
 
 # Get unique categories from analysis results
 function get_categories() {
@@ -353,17 +210,17 @@ function get_categories() {
 
 # Get template file for the specified app or framework
 function get_template_file() {
-    local dir_path="$1"
-    local framework_version_path="$2"
+    local path="$1"
+    local version_path="$2"
     local template_file=""
     
-    if [[ "$dir_path" == *.app ]]; then
+    if [[ "$path" == *.app ]]; then
         template_file="$app_template_file"
     else
         # Give priority to the user-defined framework privacy manifest template
-        local dep_name="$(get_dependency_name "$dir_path")"
-        if [ -n "$framework_version_path" ]; then
-            dep_name="$dep_name.$(basename "$framework_version_path")"
+        local dep_name="$(get_dependency_name "$path")"
+        if [ -n "$version_path" ]; then
+            dep_name="$dep_name.$(basename "$version_path")"
         fi
         
         local dep_template_file="$user_templates_dir/${dep_name}.xcprivacy"
@@ -407,24 +264,24 @@ function resign() {
 # To accelerate the build, existing privacy manifests will be left unchanged unless the `-f` option is enabled
 # After fixing, the app or framework will be automatically re-signed
 function fix() {
-    local dir_path="$1"
-    local force_resign="$2"
-    local framework_version_path="$3"
+    local path="$1"
+    local version_path="$2"
+    local force_resign="$3"
     local privacy_manifest_file=""
     
-    if [[ "$dir_path" == *.app ]]; then
+    if [[ "$path" == *.app ]]; then
         # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle for iOS, while for macOS, it should be located in `Contents/Resources/` within the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
         if [ "$is_ios_app" == true ]; then
-            privacy_manifest_file="$dir_path/$PRIVACY_MANIFEST_FILE_NAME"
+            privacy_manifest_file="$path/$PRIVACY_MANIFEST_FILE_NAME"
         else
-            privacy_manifest_file="$dir_path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
+            privacy_manifest_file="$path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
         fi
     else
         # Per the documentation, the privacy manifest should be placed at the root of the iOS framework, while for a macOS framework with multiple versions, it should be located in the `Resources` directory within the corresponding version
         # Some SDKs don’t follow the guideline, so we use a search-based approach for now
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-framework
-        local framework_path="$(get_framework_path "$dir_path" "$framework_version_path")"
+        local framework_path="$(get_framework_path "$path" "$version_path")"
         local privacy_manifest_files=($(search_privacy_manifest_files "$framework_path"))
         privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
         
@@ -443,7 +300,7 @@ function fix() {
         
         if [ "$force" == false ]; then
             if [ "$force_resign" == true ]; then
-                resign "$dir_path"
+                resign "$path"
             fi
             echo "✅ Privacy manifest file already exists, skipping fix."
             return
@@ -452,12 +309,12 @@ function fix() {
         echo "⚠️  Missing privacy manifest file!"
     fi
     
-    local results=($(analyze_api_usage "$dir_path" "$framework_version_path"))
+    local results=($(analyze_api_usage "$path" "$version_path"))
     echo "API usage analysis result(s): ${#results[@]}"
     print_array "${results[@]}"
     
-    local template_file="$(get_template_file "$dir_path" "$framework_version_path")"
-    template_usage_records+=("$(basename "$dir_path")$framework_version_path$DELIMITER$template_file")
+    local template_file="$(get_template_file "$path" "$version_path")"
+    template_usage_records+=("$(basename "$path")$version_path$DELIMITER$template_file")
     
     # Copy the template file to the privacy manifest location, overwriting if it exists
     cp "$template_file" "$privacy_manifest_file"
@@ -508,7 +365,7 @@ function fix() {
         xmllint --format "$privacy_manifest_file" -o "$privacy_manifest_file"
     fi
     
-    resign "$dir_path"
+    resign "$path"
     
     echo "✅ Privacy manifest file fixed: $privacy_manifest_file."
 }
@@ -523,18 +380,18 @@ function fix_frameworks() {
     for path in "$frameworks_dir"/*; do
         if [ -d "$path" ]; then
             local dep_name="$(get_dependency_name "$path")"
-            local framework_versions_dir="$path/Versions"
+            local versions_dir="$path/Versions"
             
-            if [ -d "$framework_versions_dir" ]; then
-                for framework_version in $(ls -1 "$framework_versions_dir" | grep -vE '^Current$'); do
-                    local framework_version_path="Versions/$framework_version"
-                    echo "Analyzing $dep_name ($framework_version_path) ..."
-                    fix "$path" false "$framework_version_path"
+            if [ -d "$versions_dir" ]; then
+                for version in $(ls -1 "$versions_dir" | grep -vE '^Current$'); do
+                    local version_path="Versions/$version"
+                    echo "Analyzing $dep_name ($version_path) ..."
+                    fix "$path" "$version_path" false
                     echo ""
                 done
             else
                 echo "Analyzing $dep_name ..."
-                fix "$path" false
+                fix "$path" "" false
                 echo ""
             fi
         fi
@@ -543,9 +400,9 @@ function fix_frameworks() {
 
 # Fix the privacy manifest for the app
 function fix_app() {
-    echo "🛠️ Fixing $(basename "$app_dir" .app) App..."
+    echo "🛠️ Fixing $(basename "$app_path" .app) App..."
     # Since the framework may have undergone fixes, the app must be forcefully re-signed
-    fix "$app_dir" true
+    fix "$app_path" "" true
     echo ""
 }
 
@@ -557,27 +414,27 @@ function generate_report() {
         return
     fi
 
-    local dir_name="$(basename "$app_dir")"
-    local app_name="${dir_name%.*}"
+    local app_name="$(basename "$app_path")"
+    local name="${app_name%.*}"
     local report_name=""
 
     # Adjust output names if the app is flagged as original
     if [ "$original" == true ]; then
-        dir_name="${app_name}-original.app"
+        app_name="${name}-original.app"
         report_name="report-original.html"
     else
-        dir_name="$app_name.app"
+        app_name="$name.app"
         report_name="report.html"
     fi
     
-    local target_app_dir="$build_dir/$dir_name"
+    local target_app_path="$build_dir/$app_name"
     local report_path="$build_dir/$report_name"
     
-    echo "Copy app to $target_app_dir"
-    rsync -a "$app_dir/" "$target_app_dir/"
+    echo "Copy app to $target_app_path"
+    rsync -a "$app_path/" "$target_app_path/"
     
     # Generate the privacy access report using the script
-    sh "$report_script" "$target_app_dir" "$report_path" "${template_usage_records[@]}"
+    sh "$report_script" "$target_app_path" "$report_path" "${template_usage_records[@]}"
     echo ""
 }
 
