@@ -254,10 +254,25 @@ function is_template_modifiable() {
 
 # Re-sign the target app or framework if code signing is enabled
 function resign() {
-  if [ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" ] && [ "${CODE_SIGNING_REQUIRED:-}" != "NO" ] && [ "${CODE_SIGNING_ALLOWED}" != "NO" ]; then
-    echo "Re-signing $1 with Identity ${EXPANDED_CODE_SIGN_IDENTITY_NAME}"
-    /usr/bin/codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY}" ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements "$1"
-  fi
+    local path="$1"
+
+    if [ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" ] && [ "${CODE_SIGNING_REQUIRED:-}" != "NO" ] && [ "${CODE_SIGNING_ALLOWED:-}" != "NO" ]; then
+        echo "Re-signing $path with Identity ${EXPANDED_CODE_SIGN_IDENTITY_NAME:-$EXPANDED_CODE_SIGN_IDENTITY}"
+
+        local codesign_cmd="/usr/bin/codesign --force --sign ${EXPANDED_CODE_SIGN_IDENTITY} ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements"
+
+        if [ "$is_ios_app" == true ]; then
+            $codesign_cmd "$path"
+        else
+            if [ -d "$path/Contents/MacOS" ]; then
+                find "$path/Contents/MacOS" -type f -name "*.dylib" | while read -r dylib_file; do
+                    $codesign_cmd "$dylib_file"
+                done
+            fi
+            
+            $codesign_cmd "$path"
+        fi
+    fi
 }
 
 # Fix the privacy manifest for the app or specified framework
