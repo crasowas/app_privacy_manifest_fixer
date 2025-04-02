@@ -252,6 +252,24 @@ function is_template_modifiable() {
     fi
 }
 
+# Check if `Hardened Runtime` is enabled for the specified path
+function is_hardened_runtime_enabled() {
+    local path="$1"
+
+    # Check environment variable first
+    if [ "${ENABLE_HARDENED_RUNTIME:-}" == "YES" ]; then
+        return 0
+    fi
+
+    # Check the code signature flags if environment variable is not set
+    local flags=$(codesign -dvvv "$path" 2>&1 | grep "flags=")
+    if echo "$flags" | grep -q "runtime"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Re-sign the target app or framework if code signing is enabled
 function resign() {
     local path="$1"
@@ -264,6 +282,10 @@ function resign() {
         if [ "$is_ios_app" == true ]; then
             $codesign_cmd "$path"
         else
+            if is_hardened_runtime_enabled "$path"; then
+                codesign_cmd="$codesign_cmd -o runtime"
+            fi
+            
             if [ -d "$path/Contents/MacOS" ]; then
                 find "$path/Contents/MacOS" -type f -name "*.dylib" | while read -r dylib_file; do
                     $codesign_cmd "$dylib_file"
