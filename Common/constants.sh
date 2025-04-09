@@ -43,7 +43,7 @@ readonly API_CATEGORIES=(
 # Symbol of the required reason APIs and their categories
 #
 # See also:
-#   * https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api
+#   * https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api
 #   * https://github.com/Wooder/ios_17_required_reason_api_scanner/blob/main/required_reason_api_binary_scanner.sh
 readonly API_SYMBOLS=(
     # NSPrivacyAccessedAPICategoryFileTimestamp
