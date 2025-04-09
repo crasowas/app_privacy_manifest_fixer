@@ -53,7 +53,7 @@
 - 用 Xcode 打开你的 iOS/macOS 项目，进入 **TARGETS** 选项卡，选择你的 App 目标。
 - 进入 **Build Phases**，点击 **+** 按钮，选择 **New Run Script Phase**。
 - 将新建的 **Run Script** 重命名为`Fix Privacy Manifest`。
-- 在 **Shell** 脚本框中添加以下代码：
+- 在 Shell 脚本框中添加以下代码：
 
   ```shell
   # 使用相对路径（推荐）：如果`app_privacy_manifest_fixer`在项目目录内
@@ -113,7 +113,7 @@
   sh install.sh <project_path> --install-builds-only
   ```
 
-  启用`--install-builds-only`选项后，工具仅在执行安装构建（如 **Archive** 操作）时运行，以优化日常开发时的构建性能。如果你是手动安装的，该命令行选项无效，需要手动勾选 **For install builds only** 选项。
+  启用`--install-builds-only`选项后，工具仅在执行安装构建（如 **Archive** 操作）时运行，以优化日常开发时的构建性能。如果你是手动安装的，该命令行选项无效，需要手动勾选 **"For install builds only"** 选项。
 
   **注意**：如果 iOS/macOS 项目在开发环境构建（生成的 App 包含`*.debug.dylib`文件），工具的 API 使用分析结果可能不准确。
 
@@ -127,10 +127,18 @@ sh upgrade.sh
 
 ### 卸载工具
 
-使用以下命令快速卸载工具：
+要快速卸载本工具，请运行以下命令：
 
 ```shell
 sh uninstall.sh <project_path>
+```
+
+### 清理工具生成的文件
+
+要删除工具生成的文件，请运行以下命令：
+
+```shell
+sh clean.sh
 ```
 
 ## 🔥 隐私清单模板
@@ -212,6 +220,8 @@ sh Report/report.sh <app_path> <report_output_path>
 # <app_path>: App路径（例如：/path/to/App.app）
 # <report_output_path>: 报告文件保存路径（例如：/path/to/report.html）
 ```
+
+为了获得更好的体验，建议使用 **Safari** 打开隐私报告。当你点击`PrivacyInfo.xcprivacy`或`Template Used: xxx.xcprivacy`按钮时，其他浏览器可能会直接在浏览器中显示文件内容，而不是打开文件所在的目录。
 
 **注意**：工具生成的报告目前仅包含隐私访问部分（`NSPrivacyAccessedAPITypes`），如果想看数据收集部分（`NSPrivacyCollectedDataTypes`）请使用 Xcode 生成`PrivacyReport`。
 
