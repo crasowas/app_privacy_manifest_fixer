@@ -1,3 +1,8 @@
+## 1.4.1
+- Fix macOS app re-signing issue.
+- Automatically enable Hardened Runtime in macOS codesign.
+- Add clean script.
+
 ## 1.4.0
 - Support for macOS app ([#9](https://github.com/crasowas/app_privacy_manifest_fixer/issues/9)).
 
