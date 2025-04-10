@@ -177,23 +177,23 @@ sh clean.sh
 
 `AppTemplate.xcprivacy`中隐私访问 API 类别及其对应声明的理由如下：
 
-| NSPrivacyAccessedAPIType                                                                                                                                            | NSPrivacyAccessedAPITypeReasons        |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
-| [NSPrivacyAccessedAPICategoryFileTimestamp](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#File-timestamp-APIs)    | C617.1: Inside app or group container  |
-| [NSPrivacyAccessedAPICategorySystemBootTime](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#System-boot-time-APIs) | 35F9.1: Measure time on-device         |
-| [NSPrivacyAccessedAPICategoryDiskSpace](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Disk-space-APIs)            | E174.1: Write or delete file on-device |
-| [NSPrivacyAccessedAPICategoryActiveKeyboards](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Active-keyboard-APIs) | 54BD.1: Customize UI on-device         |
-| [NSPrivacyAccessedAPICategoryUserDefaults](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#User-defaults-APIs)      | CA92.1: Access info from same app      |
+| [NSPrivacyAccessedAPIType](https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitype) | [NSPrivacyAccessedAPITypeReasons](https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitypereasons) |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NSPrivacyAccessedAPICategoryFileTimestamp                                                                                                                          | C617.1: Inside app or group container                                                                                                                                            |
+| NSPrivacyAccessedAPICategorySystemBootTime                                                                                                                         | 35F9.1: Measure time on-device                                                                                                                                                   |
+| NSPrivacyAccessedAPICategoryDiskSpace                                                                                                                              | E174.1: Write or delete file on-device                                                                                                                                           |
+| NSPrivacyAccessedAPICategoryActiveKeyboards                                                                                                                        | 54BD.1: Customize UI on-device                                                                                                                                                   |
+| NSPrivacyAccessedAPICategoryUserDefaults                                                                                                                           | CA92.1: Access info from same app                                                                                                                                                |
 
 `FrameworkTemplate.xcprivacy`中隐私访问 API 类别及其对应声明的理由如下：
 
-| NSPrivacyAccessedAPIType                                                                                                                                            | NSPrivacyAccessedAPITypeReasons         |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| [NSPrivacyAccessedAPICategoryFileTimestamp](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#File-timestamp-APIs)    | 0A2A.1: 3rd-party SDK wrapper on-device |
-| [NSPrivacyAccessedAPICategorySystemBootTime](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#System-boot-time-APIs) | 35F9.1: Measure time on-device          |
-| [NSPrivacyAccessedAPICategoryDiskSpace](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Disk-space-APIs)            | E174.1: Write or delete file on-device  |
-| [NSPrivacyAccessedAPICategoryActiveKeyboards](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#Active-keyboard-APIs) | 54BD.1: Customize UI on-device          |
-| [NSPrivacyAccessedAPICategoryUserDefaults](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api#User-defaults-APIs)      | C56D.1: 3rd-party SDK wrapper on-device |
+| [NSPrivacyAccessedAPIType](https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitype) | [NSPrivacyAccessedAPITypeReasons](https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitypereasons) |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NSPrivacyAccessedAPICategoryFileTimestamp                                                                                                                          | 0A2A.1: 3rd-party SDK wrapper on-device                                                                                                                                          |
+| NSPrivacyAccessedAPICategorySystemBootTime                                                                                                                         | 35F9.1: Measure time on-device                                                                                                                                                   |
+| NSPrivacyAccessedAPICategoryDiskSpace                                                                                                                              | E174.1: Write or delete file on-device                                                                                                                                           |
+| NSPrivacyAccessedAPICategoryActiveKeyboards                                                                                                                        | 54BD.1: Customize UI on-device                                                                                                                                                   |
+| NSPrivacyAccessedAPICategoryUserDefaults                                                                                                                           | C56D.1: 3rd-party SDK wrapper on-device                                                                                                                                          |
 
 ### 自定义模板
 
@@ -220,8 +220,6 @@ sh Report/report.sh <app_path> <report_output_path>
 # <app_path>: App路径（例如：/path/to/App.app）
 # <report_output_path>: 报告文件保存路径（例如：/path/to/report.html）
 ```
-
-为了获得更好的体验，建议使用 **Safari** 打开隐私报告。当你点击`PrivacyInfo.xcprivacy`或`Template Used: xxx.xcprivacy`按钮时，其他浏览器可能会直接在浏览器中显示文件内容，而不是打开文件所在的目录。
 
 **注意**：工具生成的报告目前仅包含隐私访问部分（`NSPrivacyAccessedAPITypes`），如果想看数据收集部分（`NSPrivacyCollectedDataTypes`）请使用 Xcode 生成`PrivacyReport`。
 
