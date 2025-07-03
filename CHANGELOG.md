@@ -1,3 +1,6 @@
+## 1.5.0
+- Support standalone execution without Xcode dependency ([#16](https://github.com/crasowas/app_privacy_manifest_fixer/issues/16)).
+
 ## 1.4.1
 - Fix macOS app re-signing issue.
 - Automatically enable Hardened Runtime in macOS codesign.
