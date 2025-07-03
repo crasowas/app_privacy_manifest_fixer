@@ -21,11 +21,13 @@ This tool is an automation solution based on Shell scripts, designed to analyze 
 
 ### Download the Tool
 
-1. Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest).
+1. Download the [latest release](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest) (Prefer the `.tar.gz` archive — it preserves executable permissions).
 2. Extract the downloaded file:
    - The extracted directory is usually named `app_privacy_manifest_fixer-xxx` (where `xxx` is the version number).
    - It is recommended to rename it to `app_privacy_manifest_fixer` or use the full directory name in subsequent paths.
    - **It is advised to move the directory to your iOS/macOS project to avoid path-related issues on different devices, and to easily customize the privacy manifest template for each project**.
+
+**New feature**: Starting from version `v1.5.0`, the tool supports standalone execution without dependence on Xcode. It can be used directly after downloading, with no installation required. For detailed usage, please refer to the [Standalone Mode](#standalone-mode).
 
 ### ⚡ Automatic Installation (Recommended)
 
@@ -38,7 +40,7 @@ This tool is an automation solution based on Shell scripts, designed to analyze 
 2. **Run the installation script**:
 
    ```shell
-   sh install.sh <project_path>
+   ./install.sh <project_path>
    ```
 
    - For Flutter projects, `project_path` should be the path to the `ios/macos` directory within the Flutter project.
@@ -77,9 +79,26 @@ Below is a screenshot of the Xcode Build Phases configuration after successful a
 
 ## 🚀 Getting Started
 
-After installation, the tool will automatically run with each project build, and the resulting application bundle will include the fixes.
+### Integration Mode
+
+After installation, the tool will automatically run with each project build, and the resulting app bundle will include the fixes.
 
 If the `--install-builds-only` command-line option is enabled during installation, the tool will only run during the installation of the build.
+
+### Standalone Mode
+
+No installation is required. Simply run the following command to start fixing:
+
+```shell
+./fixer_wrapper.sh <path> [options]
+```
+
+- `<path>`: Path to the app bundle. Supports `.app`, `.ipa`, and `.xcarchive` formats.
+- `[options]`: See [Command Line Options](#command-line-options) for details.
+
+**Notes:**
+- The changes will be applied directly to the original files, with a backup created automatically.
+- If the app bundle has already been signed and a matching signing certificate exists locally, the tool will automatically re-sign it. Otherwise, manual signing may be required.
 
 ### Xcode Build Log Screenshot
 
@@ -91,10 +110,14 @@ Below is a screenshot of the log output from the tool during the project build (
 
 ### Command Line Options
 
-- **Force overwrite existing privacy manifest (Not recommended)**:
+- **Force overwrite existing privacy manifest (not recommended)**:
 
   ```shell
-  sh install.sh <project_path> -f
+  # Integration mode
+  ./install.sh <project_path> -f
+  
+  # Standalone mode
+  ./fixer_wrapper.sh <path> -f
   ```
 
   Enabling the `-f` option will force the tool to generate a new privacy manifest based on the API usage analysis and privacy manifest template, overwriting the existing privacy manifest. By default (without `-f`), the tool only fixes missing privacy manifests.
@@ -102,27 +125,31 @@ Below is a screenshot of the log output from the tool during the project build (
 - **Silent mode**:
 
   ```shell
-  sh install.sh <project_path> -s
+  # Integration mode
+  ./install.sh <project_path> -s
+  
+  # Standalone mode
+  ./fixer_wrapper.sh <path> -s
   ```
 
-  Enabling the `-s` option disables output during the fix process. The tool will no longer copy the generated `*.app`, automatically generate the privacy access report, or output the fix logs. By default (without `-s`), these outputs are stored in the `app_privacy_manifest_fixer/Build` directory.
+  Enabling the `-s` option disables output during the fix process. The tool will no longer copy the generated `.app`, automatically generate the privacy access report, or output the fix logs. By default (without `-s`), these outputs are stored in the `app_privacy_manifest_fixer/Build` directory.
 
-- **Run only during installation builds (Recommended)**:
+- **Run only during installation builds (recommended; integration mode only)**:
 
   ```shell
-  sh install.sh <project_path> --install-builds-only
+  ./install.sh <project_path> --install-builds-only
   ```
 
   Enabling the `--install-builds-only` option makes the tool run only during installation builds (such as the **Archive** operation), optimizing build performance for daily development. If you manually installed, this option is ineffective, and you need to manually check the **"For install builds only"** option.
 
-  **Note**: If the iOS/macOS project is built in a development environment (where the generated app contains `*.debug.dylib` files), the tool's API usage analysis results may be inaccurate.
+  **Note**: If the iOS/macOS project is built in a development environment (where the generated app contains `.debug.dylib` files), the tool's API usage analysis results may be inaccurate.
 
 ### Upgrade the Tool
 
 To update to the latest version, run the following command:
 
 ```shell
-sh upgrade.sh
+./upgrade.sh
 ```
 
 ### Uninstall the Tool
@@ -130,7 +157,7 @@ sh upgrade.sh
 To quickly uninstall the tool, run the following command:
 
 ```shell
-sh uninstall.sh <project_path>
+./uninstall.sh <project_path>
 ```
 
 ### Clean the Tool-Generated Files
@@ -138,7 +165,7 @@ sh uninstall.sh <project_path>
 To remove files generated by the tool, run the following command:
 
 ```shell
-sh clean.sh
+./clean.sh
 ```
 
 ## 🔥 Privacy Manifest Templates
@@ -207,7 +234,7 @@ Among these templates, only `FrameworkTemplate.xcprivacy` will be modified based
 **Important Notes:**
 - The template for a specific framework must follow the naming convention `FrameworkName.xcprivacy`, where `FrameworkName` should match the name of the framework. For example, the template for `Flutter.framework` should be named `Flutter.xcprivacy`.
 - For macOS frameworks, the naming convention should be `FrameworkName.Version.xcprivacy`, where the version name is added to distinguish different versions. For a single version macOS framework, the `Version` is typically `A`.
-- The name of an SDK may not exactly match the name of the framework. To determine the correct framework name, check the `Frameworks` directory in the application bundle after building the project.
+- The name of an SDK may not exactly match the name of the framework. To determine the correct framework name, check the `Frameworks` directory in the app bundle after building the project.
 
 ## 📑 Privacy Access Report
 
@@ -216,10 +243,11 @@ By default, the tool automatically generates privacy access reports for both the
 If you need to manually generate a privacy access report for a specific app, run the following command:
 
 ```shell
-sh Report/report.sh <app_path> <report_output_path>
-# <app_path>: Path to the app (e.g., /path/to/App.app)
-# <report_output_path>: Path to save the report file (e.g., /path/to/report.html)
+./Report/report.sh <app_path> <report_output_path>
 ```
+
+- `<app_path>`: Path to the app bundle (e.g., /path/to/App.app).
+- `<report_output_path>`: Path to save the report file (e.g., /path/to/report.html).
 
 **Note**: The report generated by the tool currently only includes the privacy access section (`NSPrivacyAccessedAPITypes`). To view the data collection section (`NSPrivacyCollectedDataTypes`), please use Xcode to generate the `PrivacyReport`.
 

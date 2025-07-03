@@ -40,8 +40,11 @@ done
 
 shift $((OPTIND - 1))
 
-# Path of the app produced by the build process
-app_path="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"
+app_path="$WRAPPER_APP_PATH"
+if [ -z "$app_path" ]; then
+    # Path of the app produced by the build process
+    app_path="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"
+fi
 
 # Check if the app exists
 if [ ! -d "$app_path" ] || [[ "$app_path" != *.app ]]; then
@@ -50,10 +53,8 @@ if [ ! -d "$app_path" ] || [[ "$app_path" != *.app ]]; then
 fi
 
 # Check if the app is iOS or macOS
-is_ios_app=true
 frameworks_dir="$app_path/Frameworks"
-if [ -d "$app_path/Contents/MacOS" ]; then
-    is_ios_app=false
+if ! is_ios_platform "$app_path"; then
     frameworks_dir="$app_path/Contents/Frameworks"
 fi
 
@@ -81,7 +82,11 @@ if [ "$silent" == false ]; then
     template_usage_records=()
     
     # Build output directory
-    build_dir="$tool_root_path/Build/${PRODUCT_NAME}-${CONFIGURATION}_${MARKETING_VERSION}_${CURRENT_PROJECT_VERSION}_$(date +%Y%m%d%H%M%S)"
+    build_dir="$WRAPPER_BUILD_DIR"
+    if [ -z "$build_dir" ]; then
+        build_dir="$tool_root_path/Build/${PRODUCT_NAME}-${CONFIGURATION}_${MARKETING_VERSION}_${CURRENT_PROJECT_VERSION}_$(date +%Y%m%d%H%M%S)"
+    fi
+
     # Ensure the build directory exists
     mkdir -p "$build_dir"
 
@@ -96,7 +101,7 @@ function get_plist_file() {
     local plist_file=""
     
     if [[ "$path" == *.app ]]; then
-        if [ "$is_ios_app" == true ]; then
+        if is_ios_platform "$path"; then
             plist_file="$path/Info.plist"
         else
             plist_file="$path/Contents/Info.plist"
@@ -104,7 +109,7 @@ function get_plist_file() {
     elif [[ "$path" == *.framework ]]; then
         local framework_path="$(get_framework_path "$path" "$version_path")"
         
-        if [ "$is_ios_app" == true ]; then
+        if is_ios_platform "$path"; then
             plist_file="$framework_path/Info.plist"
         else
             plist_file="$framework_path/Resources/Info.plist"
@@ -124,7 +129,7 @@ function get_executable_path() {
     local executable_name="$(get_plist_executable "$plist_file")"
     
     if [[ "$path" == *.app ]]; then
-        if [ "$is_ios_app" == true ]; then
+        if is_ios_platform "$path"; then
             executable_path="$path/$executable_name"
         else
             executable_path="$path/Contents/MacOS/$executable_name"
@@ -279,7 +284,7 @@ function resign() {
 
         local codesign_cmd="/usr/bin/codesign --force --sign ${EXPANDED_CODE_SIGN_IDENTITY} ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements"
 
-        if [ "$is_ios_app" == true ]; then
+        if is_ios_platform "$path"; then
             $codesign_cmd "$path"
         else
             if is_hardened_runtime_enabled "$path"; then
@@ -309,7 +314,7 @@ function fix() {
     if [[ "$path" == *.app ]]; then
         # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle for iOS, while for macOS, it should be located in `Contents/Resources/` within the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
-        if [ "$is_ios_app" == true ]; then
+        if is_ios_platform "$path"; then
             privacy_manifest_file="$path/$PRIVACY_MANIFEST_FILE_NAME"
         else
             privacy_manifest_file="$path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
@@ -323,7 +328,7 @@ function fix() {
         privacy_manifest_file="$(get_privacy_manifest_file "${privacy_manifest_files[@]}")"
         
         if [ -z "$privacy_manifest_file" ]; then
-            if [ "$is_ios_app" == true ]; then
+            if is_ios_platform "$path"; then
                 privacy_manifest_file="$framework_path/$PRIVACY_MANIFEST_FILE_NAME"
             else
                 privacy_manifest_file="$framework_path/Resources/$PRIVACY_MANIFEST_FILE_NAME"
@@ -471,7 +476,7 @@ function generate_report() {
     rsync -a "$app_path/" "$target_app_path/"
     
     # Generate the privacy access report using the script
-    sh "$report_script" "$target_app_path" "$report_path" "${template_usage_records[@]}"
+    "$report_script" "$target_app_path" "$report_path" "${template_usage_records[@]}"
     echo ""
 }
 

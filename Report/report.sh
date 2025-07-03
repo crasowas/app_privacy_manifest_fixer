@@ -26,10 +26,8 @@ if [ ! -d "$app_path" ] || [[ "$app_path" != *.app ]]; then
 fi
 
 # Check if the app is iOS or macOS
-is_ios_app=true
 frameworks_dir="$app_path/Frameworks"
-if [ -d "$app_path/Contents/MacOS" ]; then
-    is_ios_app=false
+if ! is_ios_platform "$app_path"; then
     frameworks_dir="$app_path/Contents/Frameworks"
 fi
 
@@ -93,31 +91,6 @@ function analyze_privacy_accessed_api() {
     fi
 
     echo "${results[@]}"
-}
-
-# Get the path to the `Info.plist` file for the specified app or framework
-function get_plist_file() {
-    local path="$1"
-    local version_path="$2"
-    local plist_file=""
-    
-    if [[ "$path" == *.app ]]; then
-        if [ "$is_ios_app" == true ]; then
-            plist_file="$path/Info.plist"
-        else
-            plist_file="$path/Contents/Info.plist"
-        fi
-    elif [[ "$path" == *.framework ]]; then
-        local framework_path="$(get_framework_path "$path" "$version_path")"
-        
-        if [ "$is_ios_app" == true ]; then
-            plist_file="$framework_path/Info.plist"
-        else
-            plist_file="$framework_path/Resources/Info.plist"
-        fi
-    fi
-    
-    echo "$plist_file"
 }
 
 # Add an HTML <div> element with the `card` class
@@ -196,7 +169,7 @@ function generate_report_content() {
     if [[ "$path" == *.app ]]; then
         # Per the documentation, the privacy manifest should be placed at the root of the app’s bundle for iOS, while for macOS, it should be located in `Contents/Resources/` within the app’s bundle
         # Reference: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk#Add-a-privacy-manifest-to-your-app
-        if [ "$is_ios_app" == true ]; then
+        if is_ios_platform "$path"; then
             privacy_manifest_file="$path/$PRIVACY_MANIFEST_FILE_NAME"
         else
             privacy_manifest_file="$path/Contents/Resources/$PRIVACY_MANIFEST_FILE_NAME"
@@ -217,7 +190,7 @@ function generate_report_content() {
     fi
     
     local plist_file="$(get_plist_file "$path" "$version_path")"
-    local version="$(get_plist_version "$plist_file")"
+    local version="$(get_plist_short_version "$plist_file")"
     local card="$(generate_html_header "$title" "$version")"
     
     if [ -f "$privacy_manifest_file" ]; then
