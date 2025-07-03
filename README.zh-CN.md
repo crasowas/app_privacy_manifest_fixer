@@ -113,7 +113,11 @@
 - **强制覆盖现有隐私清单（不推荐）**：
 
   ```shell
+  # 集成模式
   ./install.sh <project_path> -f
+  
+  # 独立模式
+  ./fixer_wrapper.sh <path> -f
   ```
 
   启用`-f`选项后，工具会根据 API 使用分析结果和隐私清单模板生成新的隐私清单，并强制覆盖现有隐私清单。默认情况下（未启用`-f`），工具仅修复缺失的隐私清单。
@@ -121,12 +125,16 @@
 - **静默模式**：
 
   ```shell
+  # 集成模式
   ./install.sh <project_path> -s
+  
+  # 独立模式
+  ./fixer_wrapper.sh <path> -s
   ```
 
   启用`-s`选项后，工具将禁用修复时的输出，不再复制构建生成的`.app`、自动生成隐私访问报告或输出修复日志。默认情况下（未启用`-s`），这些输出存储在`app_privacy_manifest_fixer/Build`目录。
 
-- **仅在安装构建时运行（推荐）**：
+- **仅在安装构建时运行（推荐，仅用于集成模式）**：
 
   ```shell
   ./install.sh <project_path> --install-builds-only

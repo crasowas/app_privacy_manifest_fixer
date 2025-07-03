@@ -79,7 +79,7 @@ Below is a screenshot of the Xcode Build Phases configuration after successful a
 
 ## 🚀 Getting Started
 
-### Integrated Mode
+### Integration Mode
 
 After installation, the tool will automatically run with each project build, and the resulting app bundle will include the fixes.
 
@@ -110,10 +110,14 @@ Below is a screenshot of the log output from the tool during the project build (
 
 ### Command Line Options
 
-- **Force overwrite existing privacy manifest (Not recommended)**:
+- **Force overwrite existing privacy manifest (not recommended)**:
 
   ```shell
+  # Integration mode
   ./install.sh <project_path> -f
+  
+  # Standalone mode
+  ./fixer_wrapper.sh <path> -f
   ```
 
   Enabling the `-f` option will force the tool to generate a new privacy manifest based on the API usage analysis and privacy manifest template, overwriting the existing privacy manifest. By default (without `-f`), the tool only fixes missing privacy manifests.
@@ -121,12 +125,16 @@ Below is a screenshot of the log output from the tool during the project build (
 - **Silent mode**:
 
   ```shell
+  # Integration mode
   ./install.sh <project_path> -s
+  
+  # Standalone mode
+  ./fixer_wrapper.sh <path> -s
   ```
 
   Enabling the `-s` option disables output during the fix process. The tool will no longer copy the generated `.app`, automatically generate the privacy access report, or output the fix logs. By default (without `-s`), these outputs are stored in the `app_privacy_manifest_fixer/Build` directory.
 
-- **Run only during installation builds (Recommended)**:
+- **Run only during installation builds (recommended; integration mode only)**:
 
   ```shell
   ./install.sh <project_path> --install-builds-only
