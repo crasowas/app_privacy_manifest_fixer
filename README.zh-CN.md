@@ -21,11 +21,13 @@
 
 ### 下载工具
 
-1. 下载[最新发布版本](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest)。
+1. 下载[最新发布版本](https://github.com/crasowas/app_privacy_manifest_fixer/releases/latest)（推荐下载`.tar.gz`压缩包，可保留脚本的可执行权限）。
 2. 解压下载的文件：
    - 解压后的目录通常为`app_privacy_manifest_fixer-xxx`（其中`xxx`是版本号）。
    - 建议重命名为`app_privacy_manifest_fixer`，或在后续路径中使用完整目录名。
    - **建议将该目录移动至 iOS/macOS 项目中，以避免因路径问题在不同设备上运行时出现错误，同时便于为每个项目单独自定义隐私清单模板**。
+
+**新功能**：从`v1.5.0`版本开始，工具支持独立执行，无需依赖 Xcode。下载完成后可直接使用，无需安装。详细用法请参考[独立模式](#独立模式)。
 
 ### ⚡ 自动安装（推荐）
 
@@ -35,10 +37,10 @@
    cd /path/to/app_privacy_manifest_fixer
    ```
 
-2. **运行以下安装脚本**：
+2. **运行安装脚本**：
 
    ```shell
-   sh install.sh <project_path>
+   ./install.sh <project_path>
    ```  
    
    - 如果是 Flutter 项目，`project_path`应为 Flutter 项目中的`ios/macos`目录路径。
@@ -77,9 +79,26 @@
 
 ## 🚀 快速开始
 
+### 集成模式
+
 安装后，工具将在每次构建项目时自动运行，构建完成后得到的 App 包已经是修复后的结果。
 
-如果启用`--install-builds-only`命令行选项安装，工具将仅在安装构建时运行。
+如果在安装时启用`--install-builds-only`命令行选项，工具将仅在安装构建时运行。
+
+### 独立模式
+
+无需安装，直接运行以下命令即可开始修复：
+
+```shell
+./fixer_wrapper.sh <path> [options]
+```
+
+- `<path>`：App 包路径，支持`.app`、`.ipa`和`.xcarchive`格式。
+- `[options]`：详见[命令行选项](#命令行选项)。
+
+**注意：**
+- 修复改动将直接应用于原文件，并自动创建备份。
+- 如果待修复的 App 包已签名，且本地存在匹配的签名证书，工具将自动完成重新签名。否则，可能需要你手动完成签名操作。
 
 ### Xcode Build Log 截图
 
@@ -94,7 +113,7 @@
 - **强制覆盖现有隐私清单（不推荐）**：
 
   ```shell
-  sh install.sh <project_path> -f
+  ./install.sh <project_path> -f
   ```
 
   启用`-f`选项后，工具会根据 API 使用分析结果和隐私清单模板生成新的隐私清单，并强制覆盖现有隐私清单。默认情况下（未启用`-f`），工具仅修复缺失的隐私清单。
@@ -102,27 +121,27 @@
 - **静默模式**：
 
   ```shell
-  sh install.sh <project_path> -s
+  ./install.sh <project_path> -s
   ```
 
-  启用`-s`选项后，工具将禁用修复时的输出，不再复制构建生成的`*.app`、自动生成隐私访问报告或输出修复日志。默认情况下（未启用`-s`），这些输出存储在`app_privacy_manifest_fixer/Build`目录。
+  启用`-s`选项后，工具将禁用修复时的输出，不再复制构建生成的`.app`、自动生成隐私访问报告或输出修复日志。默认情况下（未启用`-s`），这些输出存储在`app_privacy_manifest_fixer/Build`目录。
 
 - **仅在安装构建时运行（推荐）**：
 
   ```shell
-  sh install.sh <project_path> --install-builds-only
+  ./install.sh <project_path> --install-builds-only
   ```
 
   启用`--install-builds-only`选项后，工具仅在执行安装构建（如 **Archive** 操作）时运行，以优化日常开发时的构建性能。如果你是手动安装的，该命令行选项无效，需要手动勾选 **"For install builds only"** 选项。
 
-  **注意**：如果 iOS/macOS 项目在开发环境构建（生成的 App 包含`*.debug.dylib`文件），工具的 API 使用分析结果可能不准确。
+  **注意**：如果 iOS/macOS 项目在开发环境构建（生成的 App 包含`.debug.dylib`文件），工具的 API 使用分析结果可能不准确。
 
 ### 升级工具
 
 要更新至最新版本，请运行以下命令：
 
 ```shell
-sh upgrade.sh
+./upgrade.sh
 ```
 
 ### 卸载工具
@@ -130,7 +149,7 @@ sh upgrade.sh
 要快速卸载本工具，请运行以下命令：
 
 ```shell
-sh uninstall.sh <project_path>
+./uninstall.sh <project_path>
 ```
 
 ### 清理工具生成的文件
@@ -138,7 +157,7 @@ sh uninstall.sh <project_path>
 要删除工具生成的文件，请运行以下命令：
 
 ```shell
-sh clean.sh
+./clean.sh
 ```
 
 ## 🔥 隐私清单模板
@@ -216,10 +235,11 @@ sh clean.sh
 如果需要手动为特定 App 生成隐私访问报告，请运行以下命令：
 
 ```shell
-sh Report/report.sh <app_path> <report_output_path>
-# <app_path>: App路径（例如：/path/to/App.app）
-# <report_output_path>: 报告文件保存路径（例如：/path/to/report.html）
+./Report/report.sh <app_path> <report_output_path>
 ```
+
+- `<app_path>`：App 包路径（例如：/path/to/App.app）。
+- `<report_output_path>`：报告文件保存路径（例如：/path/to/report.html）。
 
 **注意**：工具生成的报告目前仅包含隐私访问部分（`NSPrivacyAccessedAPITypes`），如果想看数据收集部分（`NSPrivacyCollectedDataTypes`）请使用 Xcode 生成`PrivacyReport`。
 

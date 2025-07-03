@@ -62,6 +62,54 @@ function get_dependency_name() {
     echo "$dep_name"
 }
 
+# Check if the app is iOS or macOS
+function is_ios_platform() {
+    local path="$1"
+
+    if [ -d "$app_path/Contents/MacOS" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# Get the path of the specified framework version
+function get_framework_path() {
+    local path="$1"
+    local version_path="$2"
+
+    if [ -z "$version_path" ]; then
+        echo "$path"
+    else
+        echo "$path/$version_path"
+    fi
+}
+
+# Get the path to the `Info.plist` file for the specified app or framework
+function get_plist_file() {
+    local path="$1"
+    local version_path="$2"
+    local plist_file=""
+    
+    if [[ "$path" == *.app ]]; then
+        if is_ios_platform "$path"; then
+            plist_file="$path/Info.plist"
+        else
+            plist_file="$path/Contents/Info.plist"
+        fi
+    elif [[ "$path" == *.framework ]]; then
+        local framework_path="$(get_framework_path "$path" "$version_path")"
+        
+        if is_ios_platform "$path"; then
+            plist_file="$framework_path/Info.plist"
+        else
+            plist_file="$framework_path/Resources/Info.plist"
+        fi
+    fi
+    
+    echo "$plist_file"
+}
+
 # Get the executable name from the specified `Info.plist` file
 function get_plist_executable() {
     local plist_file="$1"
@@ -80,19 +128,18 @@ function get_plist_version() {
     if [ ! -f "$plist_file" ]; then
         echo "$UNKNOWN_VERSION"
     else
-        /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist_file" 2>/dev/null || echo "$UNKNOWN_VERSION"
+        /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$plist_file" 2>/dev/null || echo "$UNKNOWN_VERSION"
     fi
 }
 
-# Get the path of the specified framework version
-function get_framework_path() {
-    local path="$1"
-    local version_path="$2"
+# Get the short version from the specified `Info.plist` file
+function get_plist_short_version() {
+    local plist_file="$1"
 
-    if [ -z "$version_path" ]; then
-        echo "$path"
+    if [ ! -f "$plist_file" ]; then
+        echo "$UNKNOWN_VERSION"
     else
-        echo "$path/$version_path"
+        /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist_file" 2>/dev/null || echo "$UNKNOWN_VERSION"
     fi
 }
 
